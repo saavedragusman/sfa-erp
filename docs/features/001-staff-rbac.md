@@ -74,21 +74,21 @@ Asunciones técnicas mías, sin decisión de negocio:
 Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empiezan por su BR.
 
 **Fase 0 · Línea base**
-- [x] 0.1 spatie (composer, config y migración) está commiteado en `b9a74a8`. Falta comprobarlo contra PostgreSQL `testing` junto a la Fase 1.
-- [ ] 0.2 Instalar Pest (`pestphp/pest`, `pest-plugin-laravel` y `pest-plugin-arch`) y convertir los dos `ExampleTest`. **Requiere tu aprobación (AGENTS §2).** Commit: `chore(deps): add pest [BR-01]`.
+- [x] 0.1 spatie (composer, config y migración) está commiteado en `b9a74a8` y sus tablas migran contra PostgreSQL `testing`.
+- [x] 0.2 Instalar Pest (`pestphp/pest`, `pest-plugin-laravel` y `pest-plugin-arch`) y convertir los dos `ExampleTest`. **Requiere tu aprobación (AGENTS §2).** Commit: `chore(deps): add pest [BR-01]`.
 
 **Fase 1 · Catálogo y roles** (depende de 0.2)
-- [ ] 1.1 RED:
+- [x] 1.1 RED:
   - `BR-01 seeds staff.manage to admin and manager`.
   - `BR-01 seeds staff.manage_admins only to admin`.
   - `BR-01 grants no staff permission to reception, doctor or owner`.
-- [ ] 1.2 `Permission`, `RoleName`, `HasRoles` en `User`, `RolesAndPermissionsSeeder` y su llamada desde `DatabaseSeeder`.
-- [ ] 1.3 Test de comportamiento previo: `BR-01 keeps user factory and password hashing unchanged`.
+- [x] 1.2 `Permission`, `RoleName`, `HasRoles` en `User`, `RolesAndPermissionsSeeder` y su llamada desde `DatabaseSeeder`.
+- [x] 1.3 Test de comportamiento previo: `BR-01 keeps user factory and password hashing unchanged`.
 
 **Fase 2 · Auditoría (BR-56 + servicio)** (zona roja; depende de 0.2)
-- [ ] 2.1 RED: `BR-56 rejects updating or deleting an audit log row` y `BR-56 never stores passwords or tokens`.
-- [ ] 2.2 Migración de `audit_logs` con trigger, `AuditLog` y `AuditLogger` (BR-56).
-- [ ] 2.3 RED y luego implementación de `BR-57 audit logger records actor, ip and before/after values in the caller transaction`: prueba que un rollback elimina la fila.
+- [x] 2.1 RED: `BR-56 rejects updating or deleting an audit log row` y `BR-56 never stores passwords or tokens`.
+- [x] 2.2 Migración de `audit_logs` con trigger, `AuditLog` y `AuditLogger` (BR-56).
+- [x] 2.3 RED y luego implementación de `BR-57 audit logger records actor, ip and before/after values in the caller transaction`: prueba que un rollback elimina la fila.
 
 **Fase 3 · Autorización, Actions y link** (zona roja; depende de 1.x y 2.x)
 - [ ] 3.1 RED:
@@ -122,8 +122,8 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 ## 6. Evidencia
 | Fase | Test → resultado | Commit | Revisión (assess) |
 |---|---|---|---|
-| 0 | — | `b9a74a8` (spatie) | — |
-| 1 | — | — | — |
-| 2 | — | — | — |
+| 0 | `sail pest`: 2/2 verde; `phpunit.xml` intacto; `pint --test` verde | `b9a74a8`, `d4b2c14`, `ba84a62`, `a53e8bf` | medio, `under_budget` |
+| 1 | `--filter=BR-01`: 5/5; suite 7/7; pint verde; Larastan 8 verde | `d5aea1e` | medio, `under_budget` |
+| 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34` | nativo medio; **high** por zona roja (auditoría), 4R propuesta y pendiente de tu decisión |
 | 3 | — | — | — |
 | 4 | — | — | — |
