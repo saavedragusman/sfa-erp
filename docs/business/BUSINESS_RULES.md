@@ -7,7 +7,7 @@
 ## M0 · Ajustes, permisos y auditoría
 | ID | Invariante | Action → Excepción | Test RED |
 |---|---|---|---|
-| BR-01 | Crear o editar personal exige `staff.manage`. Asignar el rol `admin` exige además `staff.manage_admins`. El seeder solo da estos permisos a `admin`, y a `manager` solo el primero. | `CreateStaffMemberAction` → `AuthorizationException` | `it('BR-01 forbids users without staff.manage from creating staff')` |
+| BR-01 | Crear o editar personal exige `staff.manage`. Asignar el rol `admin` exige además `staff.manage_admins`. Editar o degradar a un `admin` existente también exige `staff.manage_admins`. El personal puede tener varios roles de staff, pero `owner` nunca se combina con ellos. El seeder solo da estos permisos a `admin`, y a `manager` solo el primero. | `CreateStaffMemberAction`, `UpdateStaffMemberAction` → `AuthorizationException`, `InvalidStaffRolesException` | `it('BR-01 forbids users without staff.manage from creating staff')`, `it('BR-01 forbids manager from editing an existing admin')` |
 | BR-02 | `finance.view_global`, `expenses.manage`, `payroll.manage` y `cash.view_all` solo se siembran en `admin` y `manager`. | Policies + `Gate` en la Action → `AuthorizationException` | `it('BR-02 denies expenses and payroll without finance permissions')` |
 | BR-03 | Un tutor solo accede a sus propias mascotas, citas y carnet (ownership en la Policy). | `Queries\Portal\*` → `AuthorizationException` | `it('BR-03 prevents an owner from viewing another owner patient')` |
 | BR-04 | Con ⚙`doctor_patient_isolation = true`, un médico solo ve los pacientes que tiene asignados por una cita, una entrada en sala o una consulta previa. Con `false` ve a todos. | `Queries\Clinical\AccessiblePatientsQuery` | `it('BR-04 hides unassigned patients from doctor when isolation mode is on')` |
@@ -15,6 +15,7 @@
 | BR-56 | `audit_logs` solo admite inserciones: un trigger rechaza `UPDATE` y `DELETE`. Nunca guarda contraseñas ni tokens. | Trigger PG → `QueryException` | `it('BR-56 rejects updating or deleting an audit log row')` |
 | BR-57 | Las acciones sensibles auditan, en la misma transacción, al actor, la IP y los valores antes/después. Son: anular factura, cerrar caja, cargar o editar tasa, ajustar stock, addendum clínico, emitir récipe, cambiar permisos o personal, y el estado de un expediente INSAI. | Cada Action sensible | `it('BR-57 writes an audit entry with before and after values when an invoice is voided')` |
 | BR-58 | ⚠ DEC-04. `exchange-rate:fetch` corre a la ⚙hora configurada y guarda la tasa con `source=auto`. Si falla, no inventa ni copia una tasa: avisa al `manager` y la carga manual queda disponible. | `FetchExchangeRateAction` → `ExchangeRateFetchFailedException` | `it('BR-58 stores no rate and alerts manager when fetch fails')` |
+| BR-59 | El personal nuevo recibe un link para definir su contraseña, enviado **solo después del commit**, y que expira según el broker de contraseñas (sin contraseña inicial que circule entre personas). Editar personal no reenvía el link. | `CreateStaffMemberAction` | `it('BR-59 sends set-password link to new staff only after commit')` |
 
 ## M1 · Directorio
 | ID | Invariante | Action → Excepción | Test RED |
@@ -117,3 +118,6 @@
 | DEC-06 | BR-49 | ¿Cuándo se gana la comisión y sobre qué base? | **A)** Al quedar pagada. **B)** Al emitir. Base: el monto USD de la línea. | A. |
 | DEC-07 | BR-40 | ¿Cómo se maneja el vuelto? | **A)** En la moneda que pida el cliente, como salida de caja por moneda. **B)** Solo en la moneda del pago. | A. |
 | DEC-08 | BR-50 | ¿Cada cuánto se paga la nómina? | **A)** Quincenal. **B)** Mensual. **C)** Configurable. | C, con quincenal por defecto. |
+| DEC-09 | BR-59 | ¿Cómo recibe su acceso el personal nuevo? | **A)** El actor fija la contraseña. **B)** Link para definir la contraseña, después del commit. | **Resuelta: B, 2026-11-09.** Pasa a ser BR-59. |
+| DEC-10 | BR-01 | ¿Cuántos roles tiene el personal y cuáles asigna quien solo tiene `staff.manage`? | **A)** Un rol por persona. **B)** Varios roles. | **Resuelta: B, con `owner` nunca combinado con roles de staff, 2026-11-09.** Pendiente de confirmar con la clínica. |
+| DEC-11 | BR-01 | ¿Editar o degradar a un admin existente exige `staff.manage_admins`? | **A)** Sí. **B)** No, solo al asignar el rol. | **Resuelta: A, 2026-11-09.** Amplía BR-01. |

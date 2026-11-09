@@ -28,6 +28,7 @@ class VetPanelProvider extends PanelProvider
             ->id('vet')
             ->path('vet')
             ->login()
+            ->passwordReset()
             ->colors([
                 'primary' => Color::Amber,
             ])
