@@ -39,6 +39,9 @@ class RolesAndPermissionsSeeder extends Seeder
             PermissionModel::findOrCreate($permission->value, $guard);
         }
 
+        // Spatie flushes its cache from model events, and DatabaseSeeder silences them (WithoutModelEvents).
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         foreach ($this->bundles() as $role => $permissions) {
             Role::findOrCreate($role, $guard)
                 ->syncPermissions(array_map(fn (Permission $permission): string => $permission->value, $permissions));
