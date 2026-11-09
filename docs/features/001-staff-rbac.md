@@ -91,7 +91,7 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - [x] 2.3 RED y luego implementación de `BR-57 audit logger records actor, ip and before/after values in the caller transaction`: prueba que un rollback elimina la fila.
 
 **Fase 3 · Autorización, Actions y link** (zona roja; depende de 1.x y 2.x)
-- [ ] 3.1 RED:
+- [x] 3.1 RED:
   - `BR-01 forbids users without staff.manage from creating staff` (catálogo).
   - `BR-01 forbids manager from assigning the admin role`.
   - `BR-01 lets manager create non-admin staff with several roles`.
@@ -99,18 +99,18 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
   - `BR-01 denies an admin who lacks staff.manage_admins`.
   - `BR-01 rejects owner combined with staff roles`.
   - `BR-01 persists nothing when authorization fails`.
-- [ ] 3.2 RED:
+- [x] 3.2 RED:
   - `BR-01 forbids users without staff.manage from updating staff`.
   - `BR-01 forbids manager from editing or demoting an existing admin` (DEC-11).
   - `BR-01 forbids manager from promoting staff to admin`.
-- [ ] 3.3 RED: `BR-57 audits staff creation and updates with before and after values` y `BR-57 rolls back staff changes when audit fails`.
-- [ ] 3.4 RED: `BR-59 sends set-password link to new staff only after commit` (y no la envía si la transacción revierte).
-- [ ] 3.5 Implementar `StaffMemberData`, `UserPolicy`, `InvalidStaffRolesException`, las dos Actions y la notificación.
-- [ ] 3.6 `BUSINESS_RULES.md`: ampliar BR-01 y agregar BR-59, DEC-09 a DEC-11 con "Resuelta: X, 2026-11-09". Va en el mismo commit que sus tests.
-- [ ] 3.7 Larastan nivel 8 sin baseline nuevo, `pint --test` y la suite completa.
+- [x] 3.3 RED: `BR-57 audits staff creation and updates with before and after values` y `BR-57 rolls back staff changes when audit fails`.
+- [x] 3.4 RED: `BR-59 sends set-password link to new staff only after commit` (y no la envía si la transacción revierte).
+- [x] 3.5 Implementar `StaffMemberData`, `UserPolicy`, `InvalidStaffRolesException`, las dos Actions y la notificación.
+- [x] 3.6 `BUSINESS_RULES.md`: ampliar BR-01 y agregar BR-59, DEC-09 a DEC-11 con "Resuelta: X, 2026-11-09". Va en el mismo commit que sus tests.
+- [x] 3.7 Larastan nivel 8 sin baseline nuevo, `pint --test` y la suite completa.
 
 **Fase 4 · Pantalla Filament** (depende de 3.x)
-- [ ] 4.1 `StaffResource` y `->passwordReset()` en el panel, con un test contra el backend (HTTP) de que sin `staff.manage` no se accede.
+- [ ] 4.1 `StaffResource` en el panel (`->passwordReset()` ya se habilitó en la Fase 3, porque el link de BR-59 lo necesita), con un test contra el backend (HTTP) de que sin `staff.manage` no se accede.
 
 **Cierre de cada fase** (§4.4):
 1. Pruebas de la fase, suite completa, `types:check` y `pint --test`.
@@ -125,7 +125,7 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 | 0 | `sail pest`: 2/2 verde; `phpunit.xml` intacto; `pint --test` verde | `b9a74a8`, `d4b2c14`, `ba84a62`, `a53e8bf` | medio, `under_budget` |
 | 1 | `--filter=BR-01`: 5/5; suite 7/7; pint verde; Larastan 8 verde | `d5aea1e` | medio, `under_budget` |
 | 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34`, `dec7216` | 4R sobre `d5aea1e^..HEAD` (fases 1 y 2): **aprobada**, sin bloqueantes y con 11 hallazgos informativos. Pedidos tuyos corregidos con su RED en `dec7216`: TRUNCATE bloqueado y `secret` redactado. Suite 13/13, pint y Larastan 8 verdes |
-| 3 | — | — | — |
+| 3 | 52/52 verde (dos corridas); `pint` y Larastan 8 verdes; REDs observados antes de implementar (18 fallos por clases inexistentes y 9 por el fix previo); diferencial: `/vet/login` sigue en 200 tras habilitar `->passwordReset()` | `ceffde3` | pendiente de `assess` |
 | 4 | — | — | — |
 
 **Hallazgos de la 4R (informativos) tras el commit `a10ffb2`:**
