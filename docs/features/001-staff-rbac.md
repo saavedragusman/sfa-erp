@@ -27,7 +27,8 @@ BR-01, literal (`docs/business/BUSINESS_RULES.md`):
 [DEC-09] BR-59 · Resuelta: B (link para definir contraseña, enviado solo después del commit), 2026-11-09.
          Se convierte en la BR-59 nueva, con su test RED.
 [DEC-10] BR-01 · Resuelta: varios roles de staff por persona; `owner` nunca se combina con roles de staff, 2026-11-09.
-         Pendiente de confirmar con la clínica. Cambia la opción A que yo había recomendado (un rol por persona).
+         Ratificada el 2026-11-09: se mantiene B y el correo sigue siendo único; un empleado que también es tutor usa dos cuentas con correos distintos.
+         Cambia la opción A que yo había recomendado (un rol por persona).
 [DEC-11] BR-01 · Resuelta: A. Editar o degradar a un admin existente exige también staff.manage_admins, 2026-11-09.
          Amplía BR-01 con su test.
 ```
