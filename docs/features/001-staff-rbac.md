@@ -192,3 +192,8 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - **RED real:** el mismo error (`validation.required`, `validation.min.string`) con un `Validator` y `Password::default()`. Se añadieron `lang/es/{validation,auth,passwords}.php` con los nombres de campo (`contraseña`, `correo`, `nombre`).
 - Un test de completitud compara las claves y exige que ninguna línea del español sea igual a la inglesa, para que no vuelvan claves crudas si Laravel agrega reglas (hay que revisarlo al actualizar el framework).
 - **Aviso:** los mensajes de Filament seguirán saliendo en español por su cuenta; los de otros paquetes sin traducción a `es` seguirían crudos mientras `fallback_locale` sea `es`.
+
+**Pista de contraseña en el formulario de restablecer (`7ed5bba`):** la página muestra "Mínimo 8 caracteres." bajo el campo.
+- `PasswordPolicy` (`MIN_LENGTH = 8`) es la única definición: la regla se registra como `Password::defaults()` y el texto sale de la misma constante, así que no pueden diferir. También aplica a `app:create-admin`.
+- `ResetStaffPassword` extiende la página de Filament y está en `app/Filament/Auth`, fuera de las carpetas que el panel descubre automáticamente.
+- Cobertura: RED real (la página renderizaba sin la pista), error en español con una contraseña corta y el flujo completo de definir la contraseña desde el enlace. Suite 98/98.
