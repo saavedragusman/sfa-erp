@@ -12,4 +12,9 @@ enum Permission: string
     case StaffManage = 'staff.manage';
     case StaffManageAdmins = 'staff.manage_admins';
     case SettingsManage = 'settings.manage';
+    case FinanceViewGlobal = 'finance.view_global';
+    case ExpensesManage = 'expenses.manage';
+    case PayrollManage = 'payroll.manage';
+    case CashViewAll = 'cash.view_all';
+    case ExchangeRatesManage = 'exchange_rates.manage';
 }

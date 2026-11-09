@@ -21,8 +21,15 @@ class RolesAndPermissionsSeeder extends Seeder
     private function bundles(): array
     {
         return [
-            RoleName::Admin->value => [Permission::StaffManage, Permission::StaffManageAdmins, Permission::SettingsManage],
-            RoleName::Manager->value => [Permission::StaffManage],
+            RoleName::Admin->value => Permission::cases(),
+            RoleName::Manager->value => [
+                Permission::StaffManage,
+                Permission::FinanceViewGlobal,
+                Permission::ExpensesManage,
+                Permission::PayrollManage,
+                Permission::CashViewAll,
+                Permission::ExchangeRatesManage,
+            ],
             RoleName::Reception->value => [],
             RoleName::Doctor->value => [],
             RoleName::Owner->value => [],

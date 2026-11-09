@@ -1,6 +1,6 @@
 # 002 · Permisos financieros y tasa de cambio (BR-02, BR-05)
 
-Rama: `feat/002-finance-and-rates` (apilada sobre `chore/f0-foundations`) · Zona roja: permisos y dinero/tasas (4R en el cierre de cada fase) · Estado: **esperando la puerta**
+Rama: `feat/002-finance-and-rates` (apilada sobre `chore/f0-foundations`) · Zona roja: permisos y dinero/tasas (4R en el cierre de cada fase) · Estado: **puerta aprobada 2026-11-09 (DEC-12 = A, DEC-13 = A); en ejecución**
 
 ## 1. Spec
 Pedido del usuario, literal:
@@ -25,7 +25,7 @@ BR-05, literal:
 - **Se mueve a F1** (ROADMAP): BR-03 y BR-04. Sus tablas (tutores, pacientes, citas, consultas) no existen hasta F1 y F2; escribir sus Policies ahora sería inventar sobre tablas inexistentes.
 - **Fuera de alcance:** pantalla de tasas (F4), `exchange-rate:fetch` y su alerta (BR-58, DEC-04), vigencia y antigüedad de la tasa (BR-37, DEC-03), y las Actions de egresos y nómina (F4 y F7).
 
-## 3. Decisiones
+## 3. Decisiones (puerta aprobada 2026-11-09)
 ```text
 [DEC-PENDIENTE] BR-05
 Contexto: BR-05 nombra el permiso `exchange_rates.manage`, pero ninguna BR dice a qué roles se siembra
@@ -34,7 +34,7 @@ Duda: ¿qué roles reciben `exchange_rates.manage`?
 Opciones: A) admin y manager. B) Solo admin.
 Recomendación técnica: A. BR-58 hace que el `manager` sea quien recibe la alerta si la tasa automática falla,
           y la carga manual es su respaldo: sin el permiso no podría actuar.
-Resuelta: (pendiente)
+Resuelta: A, 2026-11-09.
 
 [DEC-PENDIENTE] BR-05
 Contexto: "Una tasa ya usada en una factura o egreso no se puede editar" depende de `invoices` y `expenses` (F4),
@@ -44,7 +44,7 @@ Opciones: A) Se deja para F4: F0 entrega tabla, Action, permiso y auditoría; `E
           RED llegan con `IssueInvoiceAction`.
           B) Se agrega ahora una consulta de "uso" que hoy devuelve siempre false.
 Recomendación técnica: A. B sería código muerto y un test que no prueba nada real.
-Resuelta: (pendiente)
+Resuelta: A, 2026-11-09.
 ```
 Asunción técnica mía, sin decisión de negocio: en F0, BR-02 entrega catálogo y siembra. Sus pruebas de denegación (`it('BR-02 denies expenses and payroll without finance permissions')`) se escriben junto a cada Action de egresos (F4) y nómina (F7), porque hoy no existe ninguna Action que autorizar.
 

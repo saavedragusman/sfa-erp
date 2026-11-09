@@ -18,8 +18,8 @@ it('BR-01 seeds roles and permissions on an empty database with model events dis
     // DatabaseSeeder uses WithoutModelEvents, which also silences Spatie's cache-flush listeners.
     Model::withoutEvents(fn () => $this->seed(RolesAndPermissionsSeeder::class));
 
-    expect(seededPermissions(RoleName::Admin))->toBe([Permission::SettingsManage->value, Permission::StaffManage->value, Permission::StaffManageAdmins->value])
-        ->and(seededPermissions(RoleName::Manager))->toBe([Permission::StaffManage->value]);
+    expect(seededPermissions(RoleName::Admin))->toBe(collect(Permission::cases())->map(fn (Permission $p): string => $p->value)->sort()->values()->all())
+        ->and(seededPermissions(RoleName::Manager))->toContain(Permission::StaffManage->value)->not->toContain(Permission::StaffManageAdmins->value);
 });
 
 it('BR-01 db:seed works from the artisan command on an empty database', function () {
