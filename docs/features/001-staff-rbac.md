@@ -124,6 +124,6 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 |---|---|---|---|
 | 0 | `sail pest`: 2/2 verde; `phpunit.xml` intacto; `pint --test` verde | `b9a74a8`, `d4b2c14`, `ba84a62`, `a53e8bf` | medio, `under_budget` |
 | 1 | `--filter=BR-01`: 5/5; suite 7/7; pint verde; Larastan 8 verde | `d5aea1e` | medio, `under_budget` |
-| 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34` | nativo medio; **high** por zona roja (auditoría), 4R propuesta y pendiente de tu decisión |
+| 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34`, `dec7216` | 4R sobre `d5aea1e^..HEAD` (fases 1 y 2): **aprobada**, sin bloqueantes y con 11 hallazgos informativos. Pedidos tuyos corregidos con su RED en `dec7216`: TRUNCATE bloqueado y `secret` redactado. Suite 13/13, pint y Larastan 8 verdes |
 | 3 | — | — | — |
 | 4 | — | — | — |
