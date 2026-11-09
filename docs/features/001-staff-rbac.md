@@ -165,3 +165,9 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - `R2-staff-role-filter-duplicated` (WARNING): "personal = al menos un rol que no sea owner" está implementado dos veces: en `User::canAccessPanel` (colección) y en `StaffMembersQuery` (`whereHas`). Pueden divergir sin aviso.
 - `R3-panel-access-ignores-panel` (WARNING): `canAccessPanel` ignora el parámetro `$panel`, así que la regla vale para cualquier panel. Si se agrega un panel de tutores, los owners recibirían 403 ahí. Solo se prueba el panel `vet`.
 - `R2-trait-unused-model-return-cast` (SUGGESTION): `failWith` devuelve la excepción en lugar de lanzarla; un nombre como `haltWithNotification` aclararía el contrato.
+
+**Corrección de los 2 WARNING de la Fase 4 (`f085797`):**
+- `R2-staff-role-filter-duplicated`: la regla "personal = todo rol salvo owner" vive ahora solo en `RoleName::isStaff()`, `staff()` y `staffValues()`. La leen `User::canAccessPanel`, `StaffMembersQuery`, el formulario de roles y `StaffRoles::assertValid`. Un test recorre todos los roles y comprueba que acceso al panel y presencia en la lista coinciden. Ese test es de fijación: no había deriva hoy, así que no fue RED. El RED real fue `RoleName::staff()` inexistente.
+- `R3-panel-access-ignores-panel`: RED real (el personal recibía `true` en cualquier panel). Ahora `canAccessPanel` solo concede acceso al panel `vet` (`VetPanelProvider::ID`, que también usan el provider y la notificación) y **deniega por defecto** cualquier otro panel; un futuro portal de tutores deberá definir su propia regla.
+- `assertMemberIsStaff` conserva la comprobación explícita de `owner` a propósito: su mensaje es "esta cuenta es de un tutor".
+- Suite 86/86 (dos corridas), `pint` y Larastan 8 verdes. Quedan sin corregir solo las SUGGESTION y los informativos de la Fase 3.
