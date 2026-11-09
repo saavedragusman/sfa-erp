@@ -1,6 +1,9 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\Filament\VetPanelProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\Filament\VetPanelProvider::class,
+    AppServiceProvider::class,
+    VetPanelProvider::class,
 ];
