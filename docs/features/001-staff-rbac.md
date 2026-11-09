@@ -125,7 +125,7 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 | 0 | `sail pest`: 2/2 verde; `phpunit.xml` intacto; `pint --test` verde | `b9a74a8`, `d4b2c14`, `ba84a62`, `a53e8bf` | medio, `under_budget` |
 | 1 | `--filter=BR-01`: 5/5; suite 7/7; pint verde; Larastan 8 verde | `d5aea1e` | medio, `under_budget` |
 | 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34`, `dec7216` | 4R sobre `d5aea1e^..HEAD` (fases 1 y 2): **aprobada**, sin bloqueantes y con 11 hallazgos informativos. Pedidos tuyos corregidos con su RED en `dec7216`: TRUNCATE bloqueado y `secret` redactado. Suite 13/13, pint y Larastan 8 verdes |
-| 3 | 52/52 verde (dos corridas); `pint` y Larastan 8 verdes; REDs observados antes de implementar (18 fallos por clases inexistentes y 9 por el fix previo); diferencial: `/vet/login` sigue en 200 tras habilitar `->passwordReset()` | `ceffde3` | pendiente de `assess` |
+| 3 | 52/52 verde (dos corridas); `pint` y Larastan 8 verdes; REDs observados antes de implementar (18 fallos por clases inexistentes y 9 por el fix previo); diferencial: `/vet/login` sigue en 200 tras habilitar `->passwordReset()` | `ceffde3` | 4R sobre `6c29e7a..HEAD`: **aprobada**, sin bloqueantes y con 4 hallazgos informativos (ver abajo) |
 | 4 | — | — | — |
 
 **Hallazgos de la 4R (informativos) tras el commit `a10ffb2`:**
@@ -140,3 +140,9 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
   - `R4-audit-fk-restrict`: los usuarios se desactivan, no se borran.
   - `R4-audit-gin-write-cost`: los GIN sobre `before` y `after` los exige CONSTITUTION §6.
 - Consecuencia asumida de la lista explícita: claves como `api_token`, `client_secret` o `*_secret` **ya no se redactan**. Si la clínica o una feature futura las usa, hay que agregarlas a la lista.
+
+**Hallazgos informativos de la 4R de la Fase 3 (sin corregir):**
+- `R3-create-duplicate-email-unhandled` (WARNING): un correo repetido al crear o editar personal lanza la `QueryException` cruda de la restricción única, sin excepción de dominio ni test. La transacción revierte bien.
+- `R3-update-audit-rollback-untested` (WARNING): falta el test de que `UpdateStaffMemberAction` revierte si falla la auditoría. La tarea 3.3 lo daba por cubierto, pero solo existe para la creación.
+- `R2-update-staff-unused-member` (SUGGESTION): `UserPolicy::updateStaff` recibe `$member` y no lo usa.
+- `R2-test-helper-duplication` (SUGGESTION): helpers globales de Pest con nombres casi iguales (`staffData`, `newStaff`, `changes`).
