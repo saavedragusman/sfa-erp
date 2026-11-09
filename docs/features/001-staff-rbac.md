@@ -186,3 +186,9 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - **Causa:** Spatie vacía su caché de permisos mediante el evento `saved` del modelo, y `DatabaseSeeder` usa `WithoutModelEvents`, que lo apaga. `syncPermissions` buscaba el permiso recién creado en una caché obsoleta.
 - **RED real** con `Model::withoutEvents(...)` y con `artisan db:seed` sobre una BD vacía (el mismo error de la captura). El seeder ahora vacía la caché de forma explícita tras crear los permisos.
 - **Fallo de mi evidencia:** el test anterior `BR-01 database seeder seeds roles and permissions but creates no user` pasaba porque su `beforeEach` ya había sembrado los roles; no ejercitaba una BD vacía. Los dos tests nuevos (`DbSeedCommandTest`) sí lo hacen.
+
+**Bug de la validación manual (`4362b7d`):** al definir la contraseña con el enlace, el error salía como la clave cruda `validation.min.string`.
+- **Causa:** `locale` y `fallback_locale` son `es`, pero no existía `lang/es`: el framework solo trae `en`, y Filament solo traduce sus propios textos.
+- **RED real:** el mismo error (`validation.required`, `validation.min.string`) con un `Validator` y `Password::default()`. Se añadieron `lang/es/{validation,auth,passwords}.php` con los nombres de campo (`contraseña`, `correo`, `nombre`).
+- Un test de completitud compara las claves y exige que ninguna línea del español sea igual a la inglesa, para que no vuelvan claves crudas si Laravel agrega reglas (hay que revisarlo al actualizar el framework).
+- **Aviso:** los mensajes de Filament seguirán saliendo en español por su cuenta; los de otros paquetes sin traducción a `es` seguirían crudos mientras `fallback_locale` sea `es`.
