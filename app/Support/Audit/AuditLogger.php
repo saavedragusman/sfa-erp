@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Writes one audit row using the caller's open transaction (BR-57).
- * Never stores passwords or tokens (BR-56).
+ * Never stores passwords, tokens or secrets (BR-56).
  */
 final class AuditLogger
 {
@@ -40,7 +40,7 @@ final class AuditLogger
         $clean = [];
 
         foreach ($values as $key => $value) {
-            if (is_string($key) && preg_match('/password|token/i', $key) === 1) {
+            if (is_string($key) && preg_match('/password|token|secret/i', $key) === 1) {
                 continue;
             }
 

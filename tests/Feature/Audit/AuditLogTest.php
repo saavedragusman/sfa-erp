@@ -75,3 +75,30 @@ it('BR-57 audit logger row disappears when the caller transaction rolls back', f
 
     expect(AuditLog::count())->toBe(0);
 });
+
+it('BR-56 rejects truncating the audit log table', function () {
+    $user = User::factory()->create();
+    recordAudit($user, $user, null, ['name' => 'A']);
+
+    expect(fn () => DB::transaction(fn () => DB::unprepared('TRUNCATE TABLE audit_logs')))
+        ->toThrow(QueryException::class, 'append-only');
+
+    expect(AuditLog::count())->toBe(1);
+});
+
+it('BR-56 never stores secrets', function () {
+    $user = User::factory()->create();
+
+    $log = recordAudit($user, $user, null, [
+        'client_secret' => 'top-secret-value',
+        'Secret' => 'upper-case-key',
+        'nested' => ['app_secret_key' => 'deep-secret', 'keep' => 'ok'],
+    ]);
+
+    $stored = json_encode(DB::table('audit_logs')->where('id', $log->id)->first());
+
+    expect($stored)->not->toContain('top-secret-value')
+        ->not->toContain('upper-case-key')
+        ->not->toContain('deep-secret')
+        ->toContain('keep');
+});
