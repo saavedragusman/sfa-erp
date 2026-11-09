@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\ResetStaffPassword;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -30,7 +31,7 @@ class VetPanelProvider extends PanelProvider
             ->id(self::ID)
             ->path('vet')
             ->login()
-            ->passwordReset()
+            ->passwordReset(resetAction: ResetStaffPassword::class)
             ->colors([
                 'primary' => Color::Amber,
             ])
