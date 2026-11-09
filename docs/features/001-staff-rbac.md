@@ -1,6 +1,6 @@
 # 001 · Staff RBAC (BR-01)
 
-Rama: `feat/001-staff-rbac` · Zona roja: permisos (4R en el cierre de fase) · Estado: **puerta aprobada el 2026-11-09 con ajustes; ejecución en curso**
+Rama: `feat/001-staff-rbac` · Zona roja: permisos (4R en el cierre de fase) · Estado: **cerrada el 2026-11-09 (fases 0 a 4); falta solo el push y el merge, que decide el humano**
 
 ## 1. Spec
 Pedido del usuario, literal:
@@ -172,3 +172,12 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - `R3-panel-access-ignores-panel`: RED real (el personal recibía `true` en cualquier panel). Ahora `canAccessPanel` solo concede acceso al panel `vet` (`VetPanelProvider::ID`, que también usan el provider y la notificación) y **deniega por defecto** cualquier otro panel; un futuro portal de tutores deberá definir su propia regla.
 - `assertMemberIsStaff` conserva la comprobación explícita de `owner` a propósito: su mensaje es "esta cuenta es de un tutor".
 - Suite 86/86 (dos corridas), `pint` y Larastan 8 verdes. Quedan sin corregir solo las SUGGESTION y los informativos de la Fase 3.
+
+**Asunciones confirmadas por el responsable (2026-11-09):**
+- Solo el personal entra al panel `vet`, y cualquier otro panel deniega por defecto.
+- Solo quien tiene `staff.manage` ve la lista del personal.
+- El link de contraseña expira a los 60 minutos (configuración del broker de Laravel, hasta que exista `ClinicSettings`).
+- El personal necesita al menos un rol.
+- DEC-10 ratificada: varios roles, correo único, dos cuentas con correos distintos para quien sea empleado y tutor.
+
+**Pendientes abiertos al cierre:** `R2-update-staff-unused-member`, `R2-test-helper-duplication` y `R2-trait-unused-model-return-cast` (informativos); `pnpm run types:check` falla hasta F2 (no hay `vue-tsc`); las decisiones técnicas no están en Engram si el hook sigue activo.
