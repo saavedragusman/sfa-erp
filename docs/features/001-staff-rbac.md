@@ -127,3 +127,16 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 | 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34`, `dec7216` | 4R sobre `d5aea1e^..HEAD` (fases 1 y 2): **aprobada**, sin bloqueantes y con 11 hallazgos informativos. Pedidos tuyos corregidos con su RED en `dec7216`: TRUNCATE bloqueado y `secret` redactado. Suite 13/13, pint y Larastan 8 verdes |
 | 3 | — | — | — |
 | 4 | — | — | — |
+
+**Hallazgos de la 4R (informativos) tras el commit `a10ffb2`:**
+- Corregidos con su test RED:
+  - `R1-seeder-default-user`: el seeder ya no crea usuarios. El primer admin sale de `app:create-admin` (`BootstrapAdminAction`, con auditoría sin actor).
+  - `R1/R2/R3-redact-*`: lista explícita de claves (`password`, `password_confirmation`, `remember_token`, `token`, `secret`, `api_key`, `hash` y `*_hash`) más los `$hidden` del modelo.
+  - `R2-seeder-guard-literal`: el guard sale de `auth.defaults.guard`.
+- Código muerto: `R2-isstaff-unused` se eliminó (sin test: no tiene comportamiento). `RoleName::isStaff()` se reintroduce solo si la Fase 3 lo necesita.
+- `R3-down-order` y `R4-audit-down-order`: `down()` ya borra la tabla y luego la función, y el test `migrate:rollback` + `migrate` fija el orden. **No fue RED**: ese test ya pasaba antes del cambio, así que el fallo no era reproducible.
+- Aceptados, sin cambios:
+  - `R3-ip-null-cli`: `ip` nulo fuera de HTTP es correcto.
+  - `R4-audit-fk-restrict`: los usuarios se desactivan, no se borran.
+  - `R4-audit-gin-write-cost`: los GIN sobre `before` y `after` los exige CONSTITUTION §6.
+- Consecuencia asumida de la lista explícita: claves como `api_token`, `client_secret` o `*_secret` **ya no se redactan**. Si la clínica o una feature futura las usa, hay que agregarlas a la lista.

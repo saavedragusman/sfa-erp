@@ -26,7 +26,7 @@ sail pnpm run types:check           # vue-tsc
 sail pnpm build
 sail artisan migrate:fresh --seed   # SOLO en local
 ```
-- Los scripts `types:check` (composer y pnpm) se crean en F0.
+- El script `composer types:check` existe desde F0. `pnpm run types:check` (vue-tsc) aplica desde F2, cuando exista el portal: hasta entonces falla porque `vue-tsc` no está instalado.
 - El gestor JS es **pnpm** (nunca npm ni yarn).
 - Las pruebas nunca usan SQLite.
 - Antes de agregar una dependencia, justificarla y preguntar.
@@ -62,7 +62,7 @@ sail artisan migrate:fresh --seed   # SOLO en local
 Cuando el documento tenga escritos el Diseño técnico y las Tareas, **detenerse y esperar aprobación**. Es una sola aprobación por feature. Después se ejecuta todo seguido, y solo se vuelve a parar ante un `[DEC-PENDIENTE]` nuevo o un cambio al diseño.
 
 ### 4.4 Cierre de cada fase (obligatorio y en este orden)
-1. Pruebas de la fase (`--filter`), después la suite completa (solo el resumen), y después `types:check`, `pint --test` y `pnpm run types:check`.
+1. Pruebas de la fase (`--filter`), después la suite completa (solo el resumen), y después `composer types:check`, `pint --test` y, desde F2, `pnpm run types:check`.
 2. **Un commit por fase**, convencional y con el ID de la regla: `feat(agenda): reject overlapping appointments [BR-10]`. Sin push ni merge.
 3. Ejecutar `gentle-ai review assess` sobre el rango de commits **de esa fase** y anotar el nivel.
    - Si sale `high` (zona roja = 4R), proponer la revisión y esperar decisión humana.
