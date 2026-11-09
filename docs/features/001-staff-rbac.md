@@ -126,7 +126,7 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 | 1 | `--filter=BR-01`: 5/5; suite 7/7; pint verde; Larastan 8 verde | `d5aea1e` | medio, `under_budget` |
 | 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34`, `dec7216` | 4R sobre `d5aea1e^..HEAD` (fases 1 y 2): **aprobada**, sin bloqueantes y con 11 hallazgos informativos. Pedidos tuyos corregidos con su RED en `dec7216`: TRUNCATE bloqueado y `secret` redactado. Suite 13/13, pint y Larastan 8 verdes |
 | 3 | 52/52 verde (dos corridas); `pint` y Larastan 8 verdes; REDs observados antes de implementar (18 fallos por clases inexistentes y 9 por el fix previo); diferencial: `/vet/login` sigue en 200 tras habilitar `->passwordReset()` | `ceffde3` | 4R sobre `6c29e7a..HEAD`: **aprobada**, sin bloqueantes y con 4 hallazgos informativos (ver abajo) |
-| 4 | 74/74 verde (dos corridas); `pint` y Larastan 8 verdes; 18 tests de pantalla (HTTP y Livewire) contra el backend | `aec1738` | pendiente de `assess` |
+| 4 | 74/74 verde (dos corridas); `pint` y Larastan 8 verdes; 18 tests de pantalla (HTTP y Livewire) contra el backend | `aec1738` | nativo medio y `under_budget` (579 líneas); **high** por zona roja (acceso al panel y permisos): 4R propuesta y pendiente de tu decisión |
 
 **Hallazgos de la 4R (informativos) tras el commit `a10ffb2`:**
 - Corregidos con su test RED:
