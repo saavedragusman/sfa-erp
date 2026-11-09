@@ -146,3 +146,9 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - `R3-update-audit-rollback-untested` (WARNING): falta el test de que `UpdateStaffMemberAction` revierte si falla la auditoría. La tarea 3.3 lo daba por cubierto, pero solo existe para la creación.
 - `R2-update-staff-unused-member` (SUGGESTION): `UserPolicy::updateStaff` recibe `$member` y no lo usa.
 - `R2-test-helper-duplication` (SUGGESTION): helpers globales de Pest con nombres casi iguales (`staffData`, `newStaff`, `changes`).
+
+**Corrección de los 2 WARNING de la Fase 3 (`91f0dd7`):**
+- `R3-create-duplicate-email-unhandled`: RED observado (la `QueryException` 23505 cruda `users_email_unique`). Ahora `StaffEmailConflict` la traduce a `DuplicateStaffEmailException` (`RULE = 'BR-01'`) en crear y en editar. Cualquier otro error de BD se relanza intacto. Los tests prueban que no se crea nada, no se audita y no se envía el link.
+- `R3-update-audit-rollback-untested`: **no fue RED**, porque el código ya revertía bien. Queda como test de fijación (`BR-57 rolls back staff update when the audit entry cannot be written`). Corrección de mi evidencia: la tarea 3.3 solo cubría la creación hasta este commit.
+- Test añadido de comportamiento previo: `BR-01 lets staff keep their own email when updating`.
+- Suite 56/56 (dos corridas), `pint` y Larastan 8 verdes.
