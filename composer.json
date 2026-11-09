@@ -51,6 +51,7 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
         ],
+        "types:check": "phpstan analyse --memory-limit=1G --no-progress",
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
