@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Settings\CreateStaffMemberAction;
 use App\DTOs\Settings\StaffMemberData;
 use App\Enums\RoleName;
+use App\Exceptions\Domain\DuplicateStaffEmailException;
 use App\Exceptions\Domain\InvalidStaffRolesException;
 use App\Models\AuditLog;
 use App\Models\User;
@@ -132,4 +133,20 @@ it('BR-57 rolls back staff creation when the audit entry cannot be written', fun
         ->toThrow(QueryException::class, 'audit down');
 
     expect(User::count())->toBe($usersBefore);
+});
+
+it('BR-01 rejects staff with an email that already exists', function () {
+    $manager = userWithRole(RoleName::Manager);
+    User::factory()->create(['email' => 'nuevo@example.com']);
+    $before = ['users' => User::count(), 'audit' => AuditLog::count(), 'tokens' => DB::table('password_reset_tokens')->count()];
+
+    expect(fn () => app(CreateStaffMemberAction::class)->execute($manager, newStaff(RoleName::Doctor)))
+        ->toThrow(DuplicateStaffEmailException::class);
+
+    expect(DuplicateStaffEmailException::RULE)->toBe('BR-01')
+        ->and(User::count())->toBe($before['users'])
+        ->and(AuditLog::count())->toBe($before['audit'])
+        ->and(DB::table('password_reset_tokens')->count())->toBe($before['tokens']);
+
+    Notification::assertNothingSent();
 });

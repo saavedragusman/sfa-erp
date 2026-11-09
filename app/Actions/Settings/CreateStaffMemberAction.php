@@ -8,7 +8,9 @@ use App\DTOs\Settings\StaffMemberData;
 use App\Models\User;
 use App\Notifications\SetStaffPasswordNotification;
 use App\Support\Audit\AuditLogger;
+use App\Support\Staff\StaffEmailConflict;
 use App\Support\Staff\StaffRoles;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Password;
@@ -19,6 +21,7 @@ final class CreateStaffMemberAction
     public function __construct(
         private readonly StaffRoles $roles,
         private readonly AuditLogger $audit,
+        private readonly StaffEmailConflict $emailConflict,
     ) {}
 
     public function execute(User $actor, StaffMemberData $data): User
@@ -32,26 +35,30 @@ final class CreateStaffMemberAction
 
         $this->roles->assertValid($data->roles);
 
-        return DB::transaction(function () use ($actor, $data): User {
-            // The member defines the real password through the emailed link (BR-59).
-            $member = User::create([
-                'name' => $data->name,
-                'email' => $data->email,
-                'password' => Str::random(64),
-            ]);
-            $member->assignRole($this->roles->names($data->roles));
+        try {
+            return DB::transaction(function () use ($actor, $data): User {
+                // The member defines the real password through the emailed link (BR-59).
+                $member = User::create([
+                    'name' => $data->name,
+                    'email' => $data->email,
+                    'password' => Str::random(64),
+                ]);
+                $member->assignRole($this->roles->names($data->roles));
 
-            $token = Password::broker()->createToken($member);
+                $token = Password::broker()->createToken($member);
 
-            $this->audit->record($actor, 'staff.created', $member, null, [
-                'name' => $member->name,
-                'email' => $member->email,
-                'roles' => $this->roles->names($data->roles),
-            ]);
+                $this->audit->record($actor, 'staff.created', $member, null, [
+                    'name' => $member->name,
+                    'email' => $member->email,
+                    'roles' => $this->roles->names($data->roles),
+                ]);
 
-            DB::afterCommit(fn () => $member->notify(new SetStaffPasswordNotification($token)));
+                DB::afterCommit(fn () => $member->notify(new SetStaffPasswordNotification($token)));
 
-            return $member->load('roles');
-        });
+                return $member->load('roles');
+            });
+        } catch (QueryException $exception) {
+            throw $this->emailConflict->translate($exception, $data->email);
+        }
     }
 }
