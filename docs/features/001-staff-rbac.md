@@ -181,3 +181,8 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - DEC-10 ratificada: varios roles, correo único, dos cuentas con correos distintos para quien sea empleado y tutor.
 
 **Pendientes abiertos al cierre:** `R2-update-staff-unused-member`, `R2-test-helper-duplication` y `R2-trait-unused-model-return-cast` (informativos); `pnpm run types:check` falla hasta F2 (no hay `vue-tsc`); las decisiones técnicas no están en Engram si el hook sigue activo.
+
+**Bug encontrado en la validación manual (`6a7cbd8`):** `sail artisan db:seed` fallaba con `PermissionDoesNotExist: staff.manage` en la BD de desarrollo.
+- **Causa:** Spatie vacía su caché de permisos mediante el evento `saved` del modelo, y `DatabaseSeeder` usa `WithoutModelEvents`, que lo apaga. `syncPermissions` buscaba el permiso recién creado en una caché obsoleta.
+- **RED real** con `Model::withoutEvents(...)` y con `artisan db:seed` sobre una BD vacía (el mismo error de la captura). El seeder ahora vacía la caché de forma explícita tras crear los permisos.
+- **Fallo de mi evidencia:** el test anterior `BR-01 database seeder seeds roles and permissions but creates no user` pasaba porque su `beforeEach` ya había sembrado los roles; no ejercitaba una BD vacía. Los dos tests nuevos (`DbSeedCommandTest`) sí lo hacen.
