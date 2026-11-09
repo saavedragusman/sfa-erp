@@ -42,6 +42,7 @@ it('BR-01 keeps the seeder idempotent', function () {
 
     expect(Role::count())->toBe(count(RoleName::cases()))
         ->and(permissionsOf(RoleName::Admin))->toBe([
+            Permission::SettingsManage->value,
             Permission::StaffManage->value,
             Permission::StaffManageAdmins->value,
         ]);

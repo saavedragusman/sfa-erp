@@ -11,4 +11,5 @@ enum Permission: string
 {
     case StaffManage = 'staff.manage';
     case StaffManageAdmins = 'staff.manage_admins';
+    case SettingsManage = 'settings.manage';
 }
