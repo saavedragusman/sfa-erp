@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\RoleName;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Providers\Filament\VetPanelProvider;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -22,11 +23,13 @@ class User extends Authenticatable implements FilamentUser
     use HasFactory, HasRoles, Notifiable;
 
     /**
-     * The staff panel is for staff only: owners use the portal and users without roles get nothing.
+     * Only the vet panel is open to staff (see RoleName::isStaff()). A panel without an explicit
+     * rule denies everyone, so a future owner portal must define its own access.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->roles->contains('name', '!=', RoleName::Owner->value);
+        return $panel->getId() === VetPanelProvider::ID
+            && $this->roles->whereIn('name', RoleName::staffValues())->isNotEmpty();
     }
 
     /**

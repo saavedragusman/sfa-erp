@@ -45,7 +45,7 @@ class StaffForm
         $options = [];
 
         foreach (RoleName::cases() as $role) {
-            if ($role === RoleName::Owner || ($role === RoleName::Admin && ! $canAssignAdmin)) {
+            if (! $role->isStaff() || ($role === RoleName::Admin && ! $canAssignAdmin)) {
                 continue;
             }
 

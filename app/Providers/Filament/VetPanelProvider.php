@@ -21,11 +21,13 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class VetPanelProvider extends PanelProvider
 {
+    public const ID = 'vet';
+
     public function panel(Panel $panel): Panel
     {
         return $panel
             ->default()
-            ->id('vet')
+            ->id(self::ID)
             ->path('vet')
             ->login()
             ->passwordReset()

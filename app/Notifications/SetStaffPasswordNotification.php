@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\Providers\Filament\VetPanelProvider;
 use Filament\Facades\Filament;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Auth\CanResetPassword;
@@ -34,7 +35,7 @@ final class SetStaffPasswordNotification extends Notification implements ShouldQ
 
     public function toMail(CanResetPassword $notifiable): MailMessage
     {
-        $panel = Filament::getPanel('vet') ?? throw new LogicException('The vet panel is not registered.');
+        $panel = Filament::getPanel(VetPanelProvider::ID) ?? throw new LogicException('The vet panel is not registered.');
         $minutes = (int) config('auth.passwords.'.config('auth.defaults.passwords').'.expire');
 
         return (new MailMessage)

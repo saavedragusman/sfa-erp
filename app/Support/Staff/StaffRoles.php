@@ -38,7 +38,7 @@ final class StaffRoles
             throw InvalidStaffRolesException::empty();
         }
 
-        if (in_array(RoleName::Owner, $roles, true)) {
+        if (array_any($roles, fn (RoleName $role): bool => ! $role->isStaff())) {
             throw InvalidStaffRolesException::ownerCombined();
         }
     }

@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Staff = users holding at least one non-owner role. Owners and role-less users are excluded.
+ * Staff = users holding at least one staff role (RoleName::isStaff()). Owners and role-less users are excluded.
  */
 final class StaffMembersQuery
 {
@@ -20,6 +20,6 @@ final class StaffMembersQuery
     {
         return User::query()
             ->with('roles')
-            ->whereHas('roles', fn (Builder $roles) => $roles->where('name', '!=', RoleName::Owner->value));
+            ->whereHas('roles', fn (Builder $roles) => $roles->whereIn('name', RoleName::staffValues()));
     }
 }
