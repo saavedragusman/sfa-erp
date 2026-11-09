@@ -12,6 +12,11 @@ use App\Models\User;
  */
 final class UserPolicy
 {
+    public function viewAnyStaff(User $actor): bool
+    {
+        return $actor->checkPermissionTo(Permission::StaffManage->value);
+    }
+
     public function createStaff(User $actor): bool
     {
         return $actor->checkPermissionTo(Permission::StaffManage->value);
