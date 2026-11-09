@@ -110,7 +110,7 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - [x] 3.7 Larastan nivel 8 sin baseline nuevo, `pint --test` y la suite completa.
 
 **Fase 4 · Pantalla Filament** (depende de 3.x)
-- [ ] 4.1 `StaffResource` en el panel (`->passwordReset()` ya se habilitó en la Fase 3, porque el link de BR-59 lo necesita), con un test contra el backend (HTTP) de que sin `staff.manage` no se accede.
+- [x] 4.1 `StaffResource` en el panel (`->passwordReset()` ya se habilitó en la Fase 3, porque el link de BR-59 lo necesita), con un test contra el backend (HTTP) de que sin `staff.manage` no se accede.
 
 **Cierre de cada fase** (§4.4):
 1. Pruebas de la fase, suite completa, `types:check` y `pint --test`.
@@ -126,7 +126,7 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 | 1 | `--filter=BR-01`: 5/5; suite 7/7; pint verde; Larastan 8 verde | `d5aea1e` | medio, `under_budget` |
 | 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34`, `dec7216` | 4R sobre `d5aea1e^..HEAD` (fases 1 y 2): **aprobada**, sin bloqueantes y con 11 hallazgos informativos. Pedidos tuyos corregidos con su RED en `dec7216`: TRUNCATE bloqueado y `secret` redactado. Suite 13/13, pint y Larastan 8 verdes |
 | 3 | 52/52 verde (dos corridas); `pint` y Larastan 8 verdes; REDs observados antes de implementar (18 fallos por clases inexistentes y 9 por el fix previo); diferencial: `/vet/login` sigue en 200 tras habilitar `->passwordReset()` | `ceffde3` | 4R sobre `6c29e7a..HEAD`: **aprobada**, sin bloqueantes y con 4 hallazgos informativos (ver abajo) |
-| 4 | — | — | — |
+| 4 | 74/74 verde (dos corridas); `pint` y Larastan 8 verdes; 18 tests de pantalla (HTTP y Livewire) contra el backend | `aec1738` | pendiente de `assess` |
 
 **Hallazgos de la 4R (informativos) tras el commit `a10ffb2`:**
 - Corregidos con su test RED:
@@ -152,3 +152,11 @@ Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empie
 - `R3-update-audit-rollback-untested`: **no fue RED**, porque el código ya revertía bien. Queda como test de fijación (`BR-57 rolls back staff update when the audit entry cannot be written`). Corrección de mi evidencia: la tarea 3.3 solo cubría la creación hasta este commit.
 - Test añadido de comportamiento previo: `BR-01 lets staff keep their own email when updating`.
 - Suite 56/56 (dos corridas), `pint` y Larastan 8 verdes.
+
+**Notas de la Fase 4:**
+- **Hallazgo de Filament 5:** si la Policy no define una habilidad, Filament la **permite**. Los `can*()` del Resource no sirven para esto: las páginas autorizan con `get*AuthorizationResponse()`. Por eso el Resource las sobrescribe todas (`viewAnyStaff`, `createStaff`, `updateStaff` + admin, y borrado denegado). El test de editar un admin como manager lo detectó (RED real: recibía 200).
+- **Asunción mía:** `User` implementa `FilamentUser` y `canAccessPanel` exige al menos un rol que no sea `owner`. Sin esto, fuera de `local`, Filament da 403 a todos. Es una decisión de acceso al panel que BR-03 y la Constitución insinúan (los tutores usan el portal) pero que ninguna BR define: confírmala.
+- **Quién ve la lista:** solo quien tiene `staff.manage`. BR-01 no define quién puede *ver* al personal.
+- **Roles ofrecidos:** `owner` nunca. `admin` solo con `staff.manage_admins`.
+- **Sin pantalla de borrado:** BR-01 no la cubre (los usuarios se desactivan, no se borran).
+- Las excepciones de las Actions se traducen a notificaciones en español. Se prueban sustituyendo la Action en el contenedor, porque una vez renderizada la pantalla Livewire reautoriza en cada request y no se puede llegar a ese camino revocando permisos.
