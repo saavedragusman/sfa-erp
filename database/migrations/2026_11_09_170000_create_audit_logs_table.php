@@ -46,7 +46,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::statement('DROP TRIGGER IF EXISTS audit_logs_append_only ON audit_logs');
+        // Dropping the table also drops its triggers; the function can only go afterwards.
         Schema::dropIfExists('audit_logs');
         DB::statement('DROP FUNCTION IF EXISTS audit_logs_reject_mutation()');
     }

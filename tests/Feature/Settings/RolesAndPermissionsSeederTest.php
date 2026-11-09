@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\Permission;
 use App\Enums\RoleName;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Spatie\Permission\Models\Role;
 
@@ -52,4 +53,22 @@ it('BR-01 keeps user factory and password hashing unchanged', function () {
     expect($user->fresh()->password)->not->toBe('secret-pass')
         ->and(password_verify('secret-pass', $user->fresh()->password))->toBeTrue()
         ->and($user->roles)->toBeEmpty();
+});
+
+it('BR-01 database seeder seeds roles and permissions but creates no user', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    expect(User::count())->toBe(0)
+        ->and(Role::count())->toBe(count(RoleName::cases()));
+});
+
+it('BR-01 seeds roles under the default auth guard', function () {
+    config([
+        'auth.guards.staff' => ['driver' => 'session', 'provider' => 'users'],
+        'auth.defaults.guard' => 'staff',
+    ]);
+
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    expect(Role::where('guard_name', 'staff')->count())->toBe(count(RoleName::cases()));
 });

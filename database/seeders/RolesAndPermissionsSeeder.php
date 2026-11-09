@@ -33,12 +33,14 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        $guard = config('auth.defaults.guard');
+
         foreach (Permission::cases() as $permission) {
-            PermissionModel::findOrCreate($permission->value, 'web');
+            PermissionModel::findOrCreate($permission->value, $guard);
         }
 
         foreach ($this->bundles() as $role => $permissions) {
-            Role::findOrCreate($role, 'web')
+            Role::findOrCreate($role, $guard)
                 ->syncPermissions(array_map(fn (Permission $permission): string => $permission->value, $permissions));
         }
 

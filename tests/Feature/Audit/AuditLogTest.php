@@ -34,7 +34,8 @@ it('BR-56 never stores passwords or tokens', function () {
         'name' => 'A',
         'password' => 'secret',
         'remember_token' => 'abc',
-        'nested' => ['api_token' => 'xyz', 'keep' => 'ok'],
+        'password_confirmation' => 'secret-again',
+        'nested' => ['token' => 'xyz', 'keep' => 'ok'],
     ]);
 
     $stored = json_encode(DB::table('audit_logs')->where('id', $log->id)->first());
@@ -90,9 +91,12 @@ it('BR-56 never stores secrets', function () {
     $user = User::factory()->create();
 
     $log = recordAudit($user, $user, null, [
-        'client_secret' => 'top-secret-value',
+        'secret' => 'top-secret-value',
         'Secret' => 'upper-case-key',
-        'nested' => ['app_secret_key' => 'deep-secret', 'keep' => 'ok'],
+        'api_key' => 'key-value',
+        'hash' => 'plain-hash',
+        'file_hash' => 'suffix-hash',
+        'nested' => ['API_KEY' => 'deep-secret', 'keep' => 'ok'],
     ]);
 
     $stored = json_encode(DB::table('audit_logs')->where('id', $log->id)->first());
@@ -100,5 +104,38 @@ it('BR-56 never stores secrets', function () {
     expect($stored)->not->toContain('top-secret-value')
         ->not->toContain('upper-case-key')
         ->not->toContain('deep-secret')
+        ->not->toContain('key-value')
+        ->not->toContain('plain-hash')
+        ->not->toContain('suffix-hash')
         ->toContain('keep');
+});
+
+it('BR-56 stores legitimate fields that only contain redacted words as part of their name', function () {
+    $user = User::factory()->create();
+
+    $log = recordAudit($user, $user, null, [
+        'password_changed_at' => '2026-11-09',
+        'token_count' => 3,
+        'secretary_name' => 'Marta',
+        'hashtag' => '#vet',
+        'api_key_label' => 'main',
+    ]);
+
+    // jsonb does not preserve key order, so compare as an unordered map.
+    expect($log->fresh()->after)->toEqual([
+        'password_changed_at' => '2026-11-09',
+        'token_count' => 3,
+        'secretary_name' => 'Marta',
+        'hashtag' => '#vet',
+        'api_key_label' => 'main',
+    ]);
+});
+
+it('BR-56 omits the hidden attributes of the audited model', function () {
+    $user = User::factory()->create()->makeHidden(['email']);
+
+    $log = recordAudit($user, $user, ['email' => 'old@example.com', 'name' => 'Old'], ['email' => 'new@example.com', 'name' => 'New']);
+
+    expect($log->fresh()->before)->toBe(['name' => 'Old'])
+        ->and($log->fresh()->after)->toBe(['name' => 'New']);
 });

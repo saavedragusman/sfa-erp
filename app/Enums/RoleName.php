@@ -11,9 +11,4 @@ enum RoleName: string
     case Reception = 'reception';
     case Doctor = 'doctor';
     case Owner = 'owner';
-
-    public function isStaff(): bool
-    {
-        return $this !== self::Owner;
-    }
 }
