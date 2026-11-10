@@ -16,6 +16,7 @@
 | BR-57 | Las acciones sensibles auditan, en la misma transacción, al actor, la IP y los valores antes/después. Son: anular factura, cerrar caja, cargar o editar tasa, ajustar stock, addendum clínico, emitir récipe, cambiar permisos o personal, y el estado de un expediente INSAI. | Cada Action sensible | `it('BR-57 writes an audit entry with before and after values when an invoice is voided')` |
 | BR-58 | ⚠ DEC-04. `exchange-rate:fetch` corre a la ⚙hora configurada y guarda la tasa con `source=auto`. Si falla, no inventa ni copia una tasa: avisa al `manager` y la carga manual queda disponible. | `FetchExchangeRateAction` → `ExchangeRateFetchFailedException` | `it('BR-58 stores no rate and alerts manager when fetch fails')` |
 | BR-59 | El personal nuevo recibe un link para definir su contraseña, enviado **solo después del commit**, y que expira según el broker de contraseñas (sin contraseña inicial que circule entre personas). Editar personal no reenvía el link. | `CreateStaffMemberAction` | `it('BR-59 sends set-password link to new staff only after commit')` |
+| BR-60 | Consultar `audit_logs` exige `audit.view`, que solo se siembra en `admin`. La pantalla es de solo lectura: no crea, edita ni borra filas. | `AuditLogPolicy` + `Gate` → `AuthorizationException` | `it('BR-60 denies viewing audit logs without audit.view')` |
 
 ## M1 · Directorio
 | ID | Invariante | Action → Excepción | Test RED |
@@ -123,3 +124,4 @@
 | DEC-11 | BR-01 | ¿Editar o degradar a un admin existente exige `staff.manage_admins`? | **A)** Sí. **B)** No, solo al asignar el rol. | **Resuelta: A, 2026-11-09.** Amplía BR-01. |
 | DEC-12 | BR-05 | ¿Qué roles reciben `exchange_rates.manage`? | **A)** `admin` y `manager`. **B)** Solo `admin`. | **Resuelta: A, 2026-11-09.** El `manager` recibe la alerta de BR-58 y la carga manual es su respaldo. |
 | DEC-13 | BR-05 | ¿Cómo se entrega el bloqueo de una tasa ya usada si aún no existen facturas ni egresos? | **A)** Se deja para F4, con `IssueInvoiceAction`. **B)** Una consulta de uso que hoy devuelve siempre `false`. | **Resuelta: A, 2026-11-09.** F0 entrega tabla, Action, permiso y auditoría; `ExchangeRateLockedException` y su test RED llegan en F4. |
+| DEC-14 | BR-60 | ¿Qué roles reciben `audit.view`? | **A)** Solo `admin`. **B)** `admin` y `manager`. | **Resuelta: A, 2026-11-09.** El manager no lee un rastro que incluye sus propios cambios; se amplía después con una línea en el seeder. |

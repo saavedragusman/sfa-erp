@@ -1,6 +1,6 @@
 # 003 · Visor de auditoría (BR-60, nueva)
 
-Rama: `feat/003-audit-viewer` (apilada sobre `feat/002-finance-and-rates`) · Zona roja: permisos y auditoría (4R en el cierre de fase) · Estado: **esperando la puerta**
+Rama: `feat/003-audit-viewer` (apilada sobre `feat/002-finance-and-rates`) · Zona roja: permisos y auditoría (4R en el cierre de fase) · Estado: **puerta aprobada 2026-11-09 (DEC-14 = A); en ejecución**
 
 ## 1. Spec
 Pedido del usuario, literal:
@@ -19,7 +19,7 @@ Contexto verificado: `audit_logs` se escribe (BR-56, BR-57) pero ningún documen
   - Auditar el hecho de consultar la auditoría.
 - **BR-60 (propuesta, se agrega a `BUSINESS_RULES.md` al aprobar la puerta):** consultar `audit_logs` exige `audit.view`, y la pantalla es de solo lectura: no crea, edita ni borra filas.
 
-## 3. Decisiones
+## 3. Decisiones (puerta aprobada 2026-11-09)
 ```text
 [DEC-PENDIENTE] BR-60
 Contexto: la auditoría guarda quién cambió permisos, personal, ajustes y tasas, con antes y después.
@@ -29,7 +29,7 @@ Opciones: A) Solo admin.
 Recomendación técnica: A. La auditoría registra cambios del propio manager (por ejemplo, tasas y personal);
           que ese mismo rol la lea le permite revisar su propio rastro. Si la clínica quiere que el gerente
           supervise, se amplía después con una línea en el seeder.
-Resuelta: (pendiente)
+Resuelta: A, 2026-11-09.
 ```
 Asunciones técnicas mías, sin decisión de negocio:
 - Las horas se muestran en `ClinicSettings::timezone` (Constitución §6); en la BD siguen en UTC.
@@ -37,7 +37,7 @@ Asunciones técnicas mías, sin decisión de negocio:
 - Una acción sin etiqueta en español se muestra con su clave (`exchange_rate.updated`), nunca se oculta.
 
 ## 4. Diseño técnico
-- **`Enums/Permission`** suma `AuditView = 'audit.view'`. El seeder lo da según DEC-14.
+- **`Enums/Permission`** suma `AuditView = 'audit.view'`. El seeder lo da solo a `admin` (DEC-14 = A).
 - **`Policies/AuditLogPolicy`:** `viewAny` y `view` solo preguntan por `audit.view`; `create`, `update`, `delete`, `deleteAny` y los demás devuelven `false`. Filament permite toda habilidad que la Policy no define, así que cada una va explícita (lección de la feature 001).
 - **`Models/AuditLog`** suma la relación `actor()` (`belongsTo User`), sin tocar la tabla.
 - **Migración nueva** con índices para filtrar sin recorrer la tabla: `created_at`, `actor_id` y `action`. La tabla es append-only por trigger, y los índices no lo afectan. Se acepta su costo de escritura (mismo criterio que el GIN, R4-audit-gin-write-cost).
