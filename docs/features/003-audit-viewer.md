@@ -1,6 +1,6 @@
 # 003 · Visor de auditoría (BR-60, nueva)
 
-Rama: `feat/003-audit-viewer` (apilada sobre `feat/002-finance-and-rates`) · Zona roja: permisos y auditoría (4R en el cierre de fase) · Estado: **puerta aprobada 2026-11-09 (DEC-14 = A); en ejecución**
+Rama: `feat/003-audit-viewer` (apilada sobre `feat/002-finance-and-rates`) · Zona roja: permisos y auditoría (4R en el cierre de fase) · Estado: **cerrada el 2026-11-09 (fases 1 a 3); falta solo el push y el merge, que decide el humano**
 
 ## 1. Spec
 Pedido del usuario, literal:
@@ -56,25 +56,34 @@ Asunciones técnicas mías, sin decisión de negocio:
 
 ## 5. Tareas
 **Fase 1 · Permiso y Policy (BR-60)**
-- [ ] 1.1 RED: `BR-60 seeds audit.view only to the roles of DEC-14`, `BR-60 denies viewing audit logs without audit.view`, `BR-60 denies every write ability on audit logs even for admin`. Test de comportamiento previo: los permisos existentes no cambian.
-- [ ] 1.2 `Permission::AuditView`, seeder y `AuditLogPolicy`.
-- [ ] 1.3 `BUSINESS_RULES.md`: BR-60 y DEC-14 resuelta (mismo commit que los tests).
+- [x] 1.1 RED: `BR-60 seeds audit.view only to the roles of DEC-14`, `BR-60 denies viewing audit logs without audit.view`, `BR-60 denies every write ability on audit logs even for admin`. Test de comportamiento previo: los permisos existentes no cambian.
+- [x] 1.2 `Permission::AuditView`, seeder y `AuditLogPolicy`.
+- [x] 1.3 `BUSINESS_RULES.md`: BR-60 y DEC-14 resuelta (mismo commit que los tests).
 
 **Fase 2 · Consulta e índices** (zona roja; depende de 1.x)
-- [ ] 2.1 RED: `BR-60 lists audit logs newest first with their actor`, `BR-60 labels known actions in Spanish and falls back to the key`, y las migraciones crean los tres índices y hacen rollback limpio.
-- [ ] 2.2 Relación `actor()`, migración de índices, `AuditLogsQuery` y `AuditActionLabel`.
+- [x] 2.1 RED: `BR-60 lists audit logs newest first with their actor`, `BR-60 labels known actions in Spanish and falls back to the key`, y las migraciones crean los tres índices y hacen rollback limpio.
+- [x] 2.2 Relación `actor()`, migración de índices, `AuditLogsQuery` y `AuditActionLabel`.
 
 **Fase 3 · Pantalla de solo lectura** (zona roja; depende de 2.x)
-- [ ] 3.1 RED:
+- [x] 3.1 RED:
   - `BR-60 shows the audit screen only with audit.view` (200 y 403 por HTTP).
   - `BR-60 exposes no create, edit or delete route`.
   - `BR-60 filters by actor, action and date range`.
   - `BR-60 shows before and after values on the detail page`.
   - `BR-60 shows times in the clinic timezone`.
-- [ ] 3.2 `AuditLogResource`, páginas, tabla, filtros y detalle.
+- [x] 3.2 `AuditLogResource`, páginas, tabla, filtros y detalle.
 
 **Cierre**
-- [ ] 4.1 Cierre de fase de §4.4 y confirmación humana (push y merge).
+- [ ] 4.1 Confirmación humana (push y merge).
 
 ## 6. Evidencia
-(vacía hasta ejecutar)
+| Fase | Commit | Pruebas | Revisión (`assess`) |
+|---|---|---|---|
+| 1 · Permiso y Policy | `fc3c3f3` | `AuditViewPermissionTest` (12): solo admin; todas las habilidades de escritura denegadas | medium, sin 4R |
+| 2 · Consulta e índices | `8c81f9b` | `AuditLogsQueryTest` (4) y rollback de los índices; sin N+1 (2 consultas) | medium, sin 4R |
+| 3 · Pantalla | `334c099` | `AuditLogResourceTest` (9): 200/403 por HTTP, sin rutas de escritura, filtros, antes/después, zona horaria | medium, sin 4R |
+
+- Suite 180/180, Larastan nivel 8 y Pint en verde. El rango completo (650 líneas) también dio medium, `under_budget`.
+- Hallazgo real de la fase 3: `/vet/audit-logs/create` casaba con `/{record}` y daba **500** (`invalid input syntax for type bigint`) en vez de 404. `ViewAuditLog::resolveRecord` ahora lanza `ModelNotFoundException` ante una clave no numérica, y un test lo fija.
+- Los filtros de fecha usan los límites del día en la zona de la clínica, no en UTC.
+- Pendiente por la asunción de §3: auditar el hecho de consultar la auditoría queda fuera de alcance.
