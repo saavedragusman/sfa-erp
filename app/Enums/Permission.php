@@ -17,4 +17,5 @@ enum Permission: string
     case PayrollManage = 'payroll.manage';
     case CashViewAll = 'cash.view_all';
     case ExchangeRatesManage = 'exchange_rates.manage';
+    case AuditView = 'audit.view';
 }
