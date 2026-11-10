@@ -1,0 +1,50 @@
+[
+  {
+    "title": "ERP Veterinario: arquitectura base Zero-DevOps",
+    "type": "architecture",
+    "scope": "project",
+    "topic_key": "architecture/base",
+    "capture_prompt": false,
+    "content": "**What**: ERP veterinario self-hosted. 1 clínica = 1 VPS = 1 BD PostgreSQL 16+. Repo único, sin forks y sin tenant_id. Laravel 12, Filament v3, portal Inertia + Vue 3 TS. La identidad de cada clínica va en spatie/laravel-settings.\n**Why**: Licencia perpetua para clínicas sin DevOps. Caso semilla: Servicios Veterinarios San Francisco de Asís (Maracaibo).\n**Where**: AGENTS.md, CONSTITUTION.md, BUSINESS_RULES.md y ROADMAP.md en la raíz del repo.\n**Learned**: Caché, sesiones, colas y locks van en PostgreSQL. Prohibidos Redis y WebSockets. Las tablas cache y cache_locks son UNLOGGED. El polling usa wire:poll.5s.visible. Meta de rendimiento: p95 < 300 ms con k6."
+  },
+  {
+    "title": "Toda lógica de negocio en app/Actions",
+    "type": "pattern",
+    "scope": "project",
+    "topic_key": "architecture/action-pattern",
+    "capture_prompt": false,
+    "content": "**What**: Las Actions son final, con un único execute() tipado. Reciben DTOs readonly y al actor, y autorizan dentro. Lanzan App\\Exceptions\\Domain\\* con const RULE = 'BR-XX'. Las lecturas con regla van en app/Queries.\n**Why**: Que web, bot y la futura app móvil compartan reglas y seguridad.\n**Where**: app/Actions/<Módulo>, tests/Arch.\n**Learned**: Filament, los controladores y los jobs no usan DB::. Filament delega en handleRecordCreation/handleRecordUpdate."
+  },
+  {
+    "title": "Permisos, auditoría e integraciones después del commit",
+    "type": "decision",
+    "scope": "project",
+    "topic_key": "architecture/security-audit",
+    "capture_prompt": false,
+    "content": "**What**: Catálogo único App\\Enums\\Permission con formato modulo.accion (spatie/laravel-permission). Los roles son solo paquetes que crea el seeder. Prohibidos hasRole, Gate::before y abort(403). audit_logs es append-only mediante un trigger de PostgreSQL. Correo y WhatsApp salen después del commit (after_commit en la cola).\n**Why**: Que la seguridad sea verificable y la auditoría inmutable en datos clínicos y financieros.\n**Where**: CONSTITUTION §4, BR-01 a BR-05 y BR-56 a BR-57.\n**Learned**: Los tests de arquitectura bloquean hasRole y los abort; un 404 sale de firstOrFail."
+  },
+  {
+    "title": "Anti-solapamiento de citas con EXCLUDE GIST",
+    "type": "decision",
+    "scope": "project",
+    "topic_key": "architecture/appointment-concurrency",
+    "capture_prompt": false,
+    "content": "**What**: EXCLUDE USING gist (doctor_id WITH =, period WITH &&) WHERE (status != 'cancelled') sobre un tstzrange '[)'. BookAppointmentAction captura el código 23P01 y lanza SlotUnavailableException.\n**Why**: Web, bot y recepción reservan en paralelo sin locks de Redis.\n**Where**: BR-10 a BR-17.\n**Learned**: Los tests corren sobre PostgreSQL real. BR-11 se prueba con dos conexiones simultáneas."
+  },
+  {
+    "title": "Finanzas bimoneda y FEFO",
+    "type": "decision",
+    "scope": "project",
+    "topic_key": "architecture/money-inventory",
+    "capture_prompt": false,
+    "content": "**What**: Se congelan amount_usd numeric(14,2), amount_ves numeric(18,2) y exchange_rate_bcv numeric(20,8) por línea, con brick/math y redondeo HALF_UP (nunca float). FEFO con FOR UPDATE al emitir; los lotes vencidos se excluyen y el lote registrado en una vacunación tiene prioridad. Tasa automática con exchange-rate:fetch y carga manual como respaldo.\n**Why**: Exactitud contable con la tasa BCV histórica y trazabilidad de los lotes.\n**Where**: BR-36 a BR-47 y BR-58.\n**Learned**: Una factura emitida es inmutable; anularla revierte el stock y las comisiones."
+  },
+  {
+    "title": "Flujo ODD/RDD del proyecto",
+    "type": "config",
+    "scope": "project",
+    "topic_key": "workflow/odd-rdd",
+    "capture_prompt": false,
+    "content": "**What**: Inline si el trabajo se puede retomar desde el diff. Feature Document + puerta si no se puede o si toca una zona roja. Regla: 1 BR = 1 test RED cuyo nombre empieza por el ID. Un commit por fase, gentle-ai review assess por fase y mem_save al cierre. No se inventa el negocio: se usa [DEC-PENDIENTE].\n**Why**: Avanzar rápido sin burocracia y con reglas verificables.\n**Where**: AGENTS.md §4 y §5.\n**Learned**: Los DEC-01 a DEC-08 están pendientes con la clínica y bloquean solo las tareas que dependen de ellos."
+  }
+]

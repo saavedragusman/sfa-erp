@@ -1,0 +1,199 @@
+# 001 · Staff RBAC (BR-01)
+
+Rama: `feat/001-staff-rbac` · Zona roja: permisos (4R en el cierre de fase) · Estado: **cerrada el 2026-11-09 (fases 0 a 4); falta solo el push y el merge, que decide el humano**
+
+## 1. Spec
+Pedido del usuario, literal:
+
+> Implementa BR-01 siguiendo AGENTS.md (zona roja: permisos → Feature Document + puerta).
+> Crea docs/features/001-staff-rbac.md y detente al terminar Diseño técnico y Tareas.
+
+BR-01, literal (`docs/business/BUSINESS_RULES.md`):
+
+> Crear o editar personal exige `staff.manage`. Asignar el rol `admin` exige además `staff.manage_admins`. El seeder solo da estos permisos a `admin`, y a `manager` solo el primero.
+> Action → Excepción: `CreateStaffMemberAction` → `AuthorizationException`
+> Test RED: `it('BR-01 forbids users without staff.manage from creating staff')`
+
+## 2. Alcance
+- **Cubre:** BR-01 (ampliada por DEC-11), BR-56, BR-57 (solo "cambiar personal y permisos") y BR-59 (nueva, por DEC-09).
+- **Fuera de alcance:**
+  - BR-02 (permisos financieros).
+  - El resto de las acciones sensibles de BR-57 (facturas, caja, tasas, stock, clínica, INSAI): se auditan en sus propias features con el servicio que crea esta.
+  - Baja o desactivación del personal: BR-01 solo habla de crear y editar.
+- **Lectura técnica:** "personal" = un `User` del sistema con un rol de personal. Un empleado de nómina sin acceso (HR, DEC-01) no es personal en este sentido.
+
+## 3. Decisiones (puerta aprobada 2026-11-09)
+```text
+[DEC-09] BR-59 · Resuelta: B (link para definir contraseña, enviado solo después del commit), 2026-11-09.
+         Se convierte en la BR-59 nueva, con su test RED.
+[DEC-10] BR-01 · Resuelta: varios roles de staff por persona; `owner` nunca se combina con roles de staff, 2026-11-09.
+         Ratificada el 2026-11-09: se mantiene B y el correo sigue siendo único; un empleado que también es tutor usa dos cuentas con correos distintos.
+         Cambia la opción A que yo había recomendado (un rol por persona).
+[DEC-11] BR-01 · Resuelta: A. Editar o degradar a un admin existente exige también staff.manage_admins, 2026-11-09.
+         Amplía BR-01 con su test.
+```
+Asunciones técnicas mías, sin decisión de negocio:
+- El personal necesita al menos un rol de staff (un `User` sin roles no es "personal"). Si la clínica quiere personal sin rol, se abre una DEC.
+- El plazo de expiración del link usa la configuración del broker de contraseñas de Laravel. El setting ⚙horas de BR-08 aún no existe, y se migra cuando llegue `ClinicSettings`.
+- Los `owner` los crea `RegisterOwnerAction` (BR-08): las Actions de staff nunca asignan ni conservan `owner`.
+
+## 4. Diseño técnico
+**Piezas** (todo en inglés; la UI, en español). `Settings` es el módulo de las Actions, porque M0 es "Ajustes, permisos y auditoría":
+- `Enums/Permission` (catálogo único) arranca con `StaffManage = 'staff.manage'` y `StaffManageAdmins = 'staff.manage_admins'`. Cada BR posterior agrega los suyos.
+- `Enums/RoleName`: es un backed enum con `admin`, `manager`, `reception`, `doctor` y `owner`, más el método `isStaff()`.
+- `Models/User` recibe `HasRoles`.
+- `RolesAndPermissionsSeeder` es idempotente (`firstOrCreate` + `syncPermissions`) y mantiene un único mapa rol→permisos que los BR posteriores extienden. Hoy `admin` tiene ambos y `manager` tiene `staff.manage`.
+- `audit_logs` (BR-56): migración nueva con `actor_id` (FK `restrict`, nullable), `action`, `entity_type`, `entity_id`, `ip` (`inet`), `before` y `after` (`jsonb` con GIN, según §6) y `created_at timestamptz`. Un trigger `BEFORE UPDATE OR DELETE` lanza una excepción. El truncado no se cubre, porque BR-56 solo pide UPDATE y DELETE.
+- `Support/Audit/AuditLogger::record(?User $actor, string $action, Model $entity, ?array $before, ?array $after)`:
+  - Inserta en la transacción abierta por la Action.
+  - Toma la IP de la request actual.
+  - Elimina recursivamente las claves `password`, `remember_token` y cualquier clave que contenga `token` (BR-56: nunca guarda contraseñas ni tokens).
+- `Policies/UserPolicy`: sus habilidades son `createStaff`, `updateStaff` y `assignAdminRole`, y solo preguntan por permisos (`can(...)`).
+- `Actions/Settings/CreateStaffMemberAction` y `UpdateStaffMemberAction`: son `final` y tienen un único `execute(User $actor, StaffMemberData $data[, User $member])`. Siguen este orden:
+  1. Autorizan con `Gate::forUser($actor)->authorize(...)` antes de escribir.
+  2. Abren `DB::transaction()` (User + roles + auditoría).
+  3. Despachan el link después del commit.
+- Regla de autorización:
+  - `staff.manage` es siempre obligatorio.
+  - `staff.manage_admins` se exige si el objetivo **es admin hoy** o los roles nuevos **incluyen admin**. Esto cubre asignar, editar y degradar.
+- `DTOs/Settings/StaffMemberData` es `readonly` y lleva `name`, `email` y `roles` (`list<RoleName>`).
+- `Exceptions/Domain/InvalidStaffRolesException` (`RULE = 'BR-01'`) salta con `owner` o con una lista vacía de roles.
+- Link de contraseña (BR-59):
+  - Un token del broker (`Password::broker()->createToken`) y una `Notification` con `ShouldQueue` y `afterCommit = true`.
+  - El panel Filament aún no tiene `->passwordReset()`: se habilita en la Fase 3 y la URL del link la construye una ruta nombrada. Así la Action no conoce Filament.
+
+**Invariantes de seguridad**
+- No hay `hasRole`, `Gate::before` ni superadmin implícito. Un `admin` sin `staff.manage_admins` queda denegado, y un test lo fija.
+- La denegación sale por Policy como `Illuminate\Auth\Access\AuthorizationException`, tal como pide BR-01.
+- Las pruebas de autorización se hacen contra la Action, no contra la UI (§6).
+
+**Dependencia pendiente de aprobación.** Pest no está instalado: solo está permitido el plugin en `composer.json`, y hay dos `ExampleTest` de PHPUnit. Sin Pest no existen `it()` ni `arch()`, que exigen la Constitución y AGENTS. La tarea 0.2 lo instala, y por AGENTS §2 se espera tu aprobación explícita.
+
+**Pantalla (Fase 4).** `StaffResource` de Filament delega en las Actions vía `handleRecordCreation/Update`. Se oculta sin `staff.manage`, usa textos en español y habilita `->passwordReset()` en el panel.
+
+## 5. Tareas
+Cada tarea sigue TDD estricto (RED → GREEN → refactor) con nombres que empiezan por su BR.
+
+**Fase 0 · Línea base**
+- [x] 0.1 spatie (composer, config y migración) está commiteado en `b9a74a8` y sus tablas migran contra PostgreSQL `testing`.
+- [x] 0.2 Instalar Pest (`pestphp/pest`, `pest-plugin-laravel` y `pest-plugin-arch`) y convertir los dos `ExampleTest`. **Requiere tu aprobación (AGENTS §2).** Commit: `chore(deps): add pest [BR-01]`.
+
+**Fase 1 · Catálogo y roles** (depende de 0.2)
+- [x] 1.1 RED:
+  - `BR-01 seeds staff.manage to admin and manager`.
+  - `BR-01 seeds staff.manage_admins only to admin`.
+  - `BR-01 grants no staff permission to reception, doctor or owner`.
+- [x] 1.2 `Permission`, `RoleName`, `HasRoles` en `User`, `RolesAndPermissionsSeeder` y su llamada desde `DatabaseSeeder`.
+- [x] 1.3 Test de comportamiento previo: `BR-01 keeps user factory and password hashing unchanged`.
+
+**Fase 2 · Auditoría (BR-56 + servicio)** (zona roja; depende de 0.2)
+- [x] 2.1 RED: `BR-56 rejects updating or deleting an audit log row` y `BR-56 never stores passwords or tokens`.
+- [x] 2.2 Migración de `audit_logs` con trigger, `AuditLog` y `AuditLogger` (BR-56).
+- [x] 2.3 RED y luego implementación de `BR-57 audit logger records actor, ip and before/after values in the caller transaction`: prueba que un rollback elimina la fila.
+
+**Fase 3 · Autorización, Actions y link** (zona roja; depende de 1.x y 2.x)
+- [x] 3.1 RED:
+  - `BR-01 forbids users without staff.manage from creating staff` (catálogo).
+  - `BR-01 forbids manager from assigning the admin role`.
+  - `BR-01 lets manager create non-admin staff with several roles`.
+  - `BR-01 lets admin create staff with the admin role`.
+  - `BR-01 denies an admin who lacks staff.manage_admins`.
+  - `BR-01 rejects owner combined with staff roles`.
+  - `BR-01 persists nothing when authorization fails`.
+- [x] 3.2 RED:
+  - `BR-01 forbids users without staff.manage from updating staff`.
+  - `BR-01 forbids manager from editing or demoting an existing admin` (DEC-11).
+  - `BR-01 forbids manager from promoting staff to admin`.
+- [x] 3.3 RED: `BR-57 audits staff creation and updates with before and after values` y `BR-57 rolls back staff changes when audit fails`.
+- [x] 3.4 RED: `BR-59 sends set-password link to new staff only after commit` (y no la envía si la transacción revierte).
+- [x] 3.5 Implementar `StaffMemberData`, `UserPolicy`, `InvalidStaffRolesException`, las dos Actions y la notificación.
+- [x] 3.6 `BUSINESS_RULES.md`: ampliar BR-01 y agregar BR-59, DEC-09 a DEC-11 con "Resuelta: X, 2026-11-09". Va en el mismo commit que sus tests.
+- [x] 3.7 Larastan nivel 8 sin baseline nuevo, `pint --test` y la suite completa.
+
+**Fase 4 · Pantalla Filament** (depende de 3.x)
+- [x] 4.1 `StaffResource` en el panel (`->passwordReset()` ya se habilitó en la Fase 3, porque el link de BR-59 lo necesita), con un test contra el backend (HTTP) de que sin `staff.manage` no se accede.
+
+**Cierre de cada fase** (§4.4):
+1. Pruebas de la fase, suite completa, `types:check` y `pint --test`.
+2. Un commit con el ID de la regla y sin push.
+3. `gentle-ai review assess` sobre el rango de la fase. Si sale `high`, propongo 4R y espero tu decisión.
+4. `mem_save` de las decisiones técnicas.
+5. Actualizar la Evidencia.
+
+## 6. Evidencia
+| Fase | Test → resultado | Commit | Revisión (assess) |
+|---|---|---|---|
+| 0 | `sail pest`: 2/2 verde; `phpunit.xml` intacto; `pint --test` verde | `b9a74a8`, `d4b2c14`, `ba84a62`, `a53e8bf` | medio, `under_budget` |
+| 1 | `--filter=BR-01`: 5/5; suite 7/7; pint verde; Larastan 8 verde | `d5aea1e` | medio, `under_budget` |
+| 2 | BR-56 (2) y BR-57 (2): suite 11/11 (dos corridas, valida `migrate:fresh`); pint y Larastan 8 verdes | `76f5b34`, `dec7216` | 4R sobre `d5aea1e^..HEAD` (fases 1 y 2): **aprobada**, sin bloqueantes y con 11 hallazgos informativos. Pedidos tuyos corregidos con su RED en `dec7216`: TRUNCATE bloqueado y `secret` redactado. Suite 13/13, pint y Larastan 8 verdes |
+| 3 | 52/52 verde (dos corridas); `pint` y Larastan 8 verdes; REDs observados antes de implementar (18 fallos por clases inexistentes y 9 por el fix previo); diferencial: `/vet/login` sigue en 200 tras habilitar `->passwordReset()` | `ceffde3` | 4R sobre `6c29e7a..HEAD`: **aprobada**, sin bloqueantes y con 4 hallazgos informativos (ver abajo) |
+| 4 | 74/74 verde (dos corridas); `pint` y Larastan 8 verdes; 18 tests de pantalla (HTTP y Livewire) contra el backend | `aec1738` | nativo medio y `under_budget` (579 líneas); **high** por zona roja (acceso al panel y permisos): 4R sobre `4a316bc..HEAD` **aprobada**, sin bloqueantes y con 3 hallazgos informativos (ver abajo) |
+
+**Hallazgos de la 4R (informativos) tras el commit `a10ffb2`:**
+- Corregidos con su test RED:
+  - `R1-seeder-default-user`: el seeder ya no crea usuarios. El primer admin sale de `app:create-admin` (`BootstrapAdminAction`, con auditoría sin actor).
+  - `R1/R2/R3-redact-*`: lista explícita de claves (`password`, `password_confirmation`, `remember_token`, `token`, `secret`, `api_key`, `hash` y `*_hash`) más los `$hidden` del modelo.
+  - `R2-seeder-guard-literal`: el guard sale de `auth.defaults.guard`.
+- Código muerto: `R2-isstaff-unused` se eliminó (sin test: no tiene comportamiento). `RoleName::isStaff()` se reintroduce solo si la Fase 3 lo necesita.
+- `R3-down-order` y `R4-audit-down-order`: `down()` ya borra la tabla y luego la función, y el test `migrate:rollback` + `migrate` fija el orden. **No fue RED**: ese test ya pasaba antes del cambio, así que el fallo no era reproducible.
+- Aceptados, sin cambios:
+  - `R3-ip-null-cli`: `ip` nulo fuera de HTTP es correcto.
+  - `R4-audit-fk-restrict`: los usuarios se desactivan, no se borran.
+  - `R4-audit-gin-write-cost`: los GIN sobre `before` y `after` los exige CONSTITUTION §6.
+- Consecuencia asumida de la lista explícita: claves como `api_token`, `client_secret` o `*_secret` **ya no se redactan**. Si la clínica o una feature futura las usa, hay que agregarlas a la lista.
+
+**Hallazgos informativos de la 4R de la Fase 3 (sin corregir):**
+- `R3-create-duplicate-email-unhandled` (WARNING): un correo repetido al crear o editar personal lanza la `QueryException` cruda de la restricción única, sin excepción de dominio ni test. La transacción revierte bien.
+- `R3-update-audit-rollback-untested` (WARNING): falta el test de que `UpdateStaffMemberAction` revierte si falla la auditoría. La tarea 3.3 lo daba por cubierto, pero solo existe para la creación.
+- `R2-update-staff-unused-member` (SUGGESTION): `UserPolicy::updateStaff` recibe `$member` y no lo usa.
+- `R2-test-helper-duplication` (SUGGESTION): helpers globales de Pest con nombres casi iguales (`staffData`, `newStaff`, `changes`).
+
+**Corrección de los 2 WARNING de la Fase 3 (`91f0dd7`):**
+- `R3-create-duplicate-email-unhandled`: RED observado (la `QueryException` 23505 cruda `users_email_unique`). Ahora `StaffEmailConflict` la traduce a `DuplicateStaffEmailException` (`RULE = 'BR-01'`) en crear y en editar. Cualquier otro error de BD se relanza intacto. Los tests prueban que no se crea nada, no se audita y no se envía el link.
+- `R3-update-audit-rollback-untested`: **no fue RED**, porque el código ya revertía bien. Queda como test de fijación (`BR-57 rolls back staff update when the audit entry cannot be written`). Corrección de mi evidencia: la tarea 3.3 solo cubría la creación hasta este commit.
+- Test añadido de comportamiento previo: `BR-01 lets staff keep their own email when updating`.
+- Suite 56/56 (dos corridas), `pint` y Larastan 8 verdes.
+
+**Notas de la Fase 4:**
+- **Hallazgo de Filament 5:** si la Policy no define una habilidad, Filament la **permite**. Los `can*()` del Resource no sirven para esto: las páginas autorizan con `get*AuthorizationResponse()`. Por eso el Resource las sobrescribe todas (`viewAnyStaff`, `createStaff`, `updateStaff` + admin, y borrado denegado). El test de editar un admin como manager lo detectó (RED real: recibía 200).
+- **Asunción mía:** `User` implementa `FilamentUser` y `canAccessPanel` exige al menos un rol que no sea `owner`. Sin esto, fuera de `local`, Filament da 403 a todos. Es una decisión de acceso al panel que BR-03 y la Constitución insinúan (los tutores usan el portal) pero que ninguna BR define: confírmala.
+- **Quién ve la lista:** solo quien tiene `staff.manage`. BR-01 no define quién puede *ver* al personal.
+- **Roles ofrecidos:** `owner` nunca. `admin` solo con `staff.manage_admins`.
+- **Sin pantalla de borrado:** BR-01 no la cubre (los usuarios se desactivan, no se borran).
+- Las excepciones de las Actions se traducen a notificaciones en español. Se prueban sustituyendo la Action en el contenedor, porque una vez renderizada la pantalla Livewire reautoriza en cada request y no se puede llegar a ese camino revocando permisos.
+
+**Hallazgos informativos de la 4R de la Fase 4 (sin corregir):**
+- `R2-staff-role-filter-duplicated` (WARNING): "personal = al menos un rol que no sea owner" está implementado dos veces: en `User::canAccessPanel` (colección) y en `StaffMembersQuery` (`whereHas`). Pueden divergir sin aviso.
+- `R3-panel-access-ignores-panel` (WARNING): `canAccessPanel` ignora el parámetro `$panel`, así que la regla vale para cualquier panel. Si se agrega un panel de tutores, los owners recibirían 403 ahí. Solo se prueba el panel `vet`.
+- `R2-trait-unused-model-return-cast` (SUGGESTION): `failWith` devuelve la excepción en lugar de lanzarla; un nombre como `haltWithNotification` aclararía el contrato.
+
+**Corrección de los 2 WARNING de la Fase 4 (`f085797`):**
+- `R2-staff-role-filter-duplicated`: la regla "personal = todo rol salvo owner" vive ahora solo en `RoleName::isStaff()`, `staff()` y `staffValues()`. La leen `User::canAccessPanel`, `StaffMembersQuery`, el formulario de roles y `StaffRoles::assertValid`. Un test recorre todos los roles y comprueba que acceso al panel y presencia en la lista coinciden. Ese test es de fijación: no había deriva hoy, así que no fue RED. El RED real fue `RoleName::staff()` inexistente.
+- `R3-panel-access-ignores-panel`: RED real (el personal recibía `true` en cualquier panel). Ahora `canAccessPanel` solo concede acceso al panel `vet` (`VetPanelProvider::ID`, que también usan el provider y la notificación) y **deniega por defecto** cualquier otro panel; un futuro portal de tutores deberá definir su propia regla.
+- `assertMemberIsStaff` conserva la comprobación explícita de `owner` a propósito: su mensaje es "esta cuenta es de un tutor".
+- Suite 86/86 (dos corridas), `pint` y Larastan 8 verdes. Quedan sin corregir solo las SUGGESTION y los informativos de la Fase 3.
+
+**Asunciones confirmadas por el responsable (2026-11-09):**
+- Solo el personal entra al panel `vet`, y cualquier otro panel deniega por defecto.
+- Solo quien tiene `staff.manage` ve la lista del personal.
+- El link de contraseña expira a los 60 minutos (configuración del broker de Laravel, hasta que exista `ClinicSettings`).
+- El personal necesita al menos un rol.
+- DEC-10 ratificada: varios roles, correo único, dos cuentas con correos distintos para quien sea empleado y tutor.
+
+**Pendientes abiertos al cierre:** `R2-update-staff-unused-member`, `R2-test-helper-duplication` y `R2-trait-unused-model-return-cast` (informativos); `pnpm run types:check` falla hasta F2 (no hay `vue-tsc`); las decisiones técnicas no están en Engram si el hook sigue activo.
+
+**Bug encontrado en la validación manual (`6a7cbd8`):** `sail artisan db:seed` fallaba con `PermissionDoesNotExist: staff.manage` en la BD de desarrollo.
+- **Causa:** Spatie vacía su caché de permisos mediante el evento `saved` del modelo, y `DatabaseSeeder` usa `WithoutModelEvents`, que lo apaga. `syncPermissions` buscaba el permiso recién creado en una caché obsoleta.
+- **RED real** con `Model::withoutEvents(...)` y con `artisan db:seed` sobre una BD vacía (el mismo error de la captura). El seeder ahora vacía la caché de forma explícita tras crear los permisos.
+- **Fallo de mi evidencia:** el test anterior `BR-01 database seeder seeds roles and permissions but creates no user` pasaba porque su `beforeEach` ya había sembrado los roles; no ejercitaba una BD vacía. Los dos tests nuevos (`DbSeedCommandTest`) sí lo hacen.
+
+**Bug de la validación manual (`4362b7d`):** al definir la contraseña con el enlace, el error salía como la clave cruda `validation.min.string`.
+- **Causa:** `locale` y `fallback_locale` son `es`, pero no existía `lang/es`: el framework solo trae `en`, y Filament solo traduce sus propios textos.
+- **RED real:** el mismo error (`validation.required`, `validation.min.string`) con un `Validator` y `Password::default()`. Se añadieron `lang/es/{validation,auth,passwords}.php` con los nombres de campo (`contraseña`, `correo`, `nombre`).
+- Un test de completitud compara las claves y exige que ninguna línea del español sea igual a la inglesa, para que no vuelvan claves crudas si Laravel agrega reglas (hay que revisarlo al actualizar el framework).
+- **Aviso:** los mensajes de Filament seguirán saliendo en español por su cuenta; los de otros paquetes sin traducción a `es` seguirían crudos mientras `fallback_locale` sea `es`.
+
+**Pista de contraseña en el formulario de restablecer (`7ed5bba`):** la página muestra "Mínimo 8 caracteres." bajo el campo.
+- `PasswordPolicy` (`MIN_LENGTH = 8`) es la única definición: la regla se registra como `Password::defaults()` y el texto sale de la misma constante, así que no pueden diferir. También aplica a `app:create-admin`.
+- `ResetStaffPassword` extiende la página de Filament y está en `app/Filament/Auth`, fuera de las carpetas que el panel descubre automáticamente.
+- Cobertura: RED real (la página renderizaba sin la pista), error en español con una contraseña corta y el flujo completo de definir la contraseña desde el enlace. Suite 98/98.
