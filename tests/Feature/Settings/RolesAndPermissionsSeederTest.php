@@ -41,10 +41,7 @@ it('BR-01 keeps the seeder idempotent', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     expect(Role::count())->toBe(count(RoleName::cases()))
-        ->and(permissionsOf(RoleName::Admin))->toBe([
-            Permission::StaffManage->value,
-            Permission::StaffManageAdmins->value,
-        ]);
+        ->and(permissionsOf(RoleName::Admin))->toBe(collect(Permission::cases())->map(fn (Permission $p): string => $p->value)->sort()->values()->all());
 });
 
 it('BR-01 keeps user factory and password hashing unchanged', function () {

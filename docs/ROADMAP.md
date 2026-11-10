@@ -4,8 +4,8 @@
 
 | Fase | Entrega | BRs | DEC antes de empezar | FD | Sale cuando… |
 |---|---|---|---|---|---|
-| **F0 · Cimientos** | Laravel 12 + PostgreSQL 16 en Sail (`btree_gist`, `citext`, `pg_trgm`), drivers `database`, settings, catálogo `Permission`, `audit_logs` con trigger, panel Filament con la marca SFA, tests de arquitectura, scripts de composer y pnpm de AGENTS.md | BR-01–05, 56, 57 | — | Sí (permisos y auditoría) | La suite pasa en verde con los tests de arquitectura incluidos, y el logo y los colores cambian desde Ajustes |
-| **F1 · Directorio + Sala de espera** | Tutores y mascotas, alta de urgencia, link de contraseña después del commit, check-in, fila con `wire:poll.5s.visible` | BR-06–09, 18–23 | DEC-01 | No | El médico ve un check-in sin cita en ≤ 5 s **y k6 da p95 < 300 ms** (15 pantallas en polling + 2 reservas concurrentes) |
+| **F0 · Cimientos** | Laravel 12 + PostgreSQL 16 en Sail (`btree_gist`, `citext`, `pg_trgm`), drivers `database`, settings, catálogo `Permission`, `audit_logs` con trigger y pantalla de consulta, panel Filament con la marca SFA, tests de arquitectura, scripts de composer y pnpm de AGENTS.md | BR-01, 02, 05, 56–60 | — | Sí (permisos y auditoría) | La suite pasa en verde con los tests de arquitectura incluidos, y el logo y los colores cambian desde Ajustes |
+| **F1 · Directorio + Sala de espera** | Tutores y mascotas, alta de urgencia, link de contraseña después del commit, check-in, fila con `wire:poll.5s.visible` | BR-03, 04, 06–09, 18–23 | DEC-01 | No | El médico ve un check-in sin cita en ≤ 5 s **y k6 da p95 < 300 ms** (15 pantallas en polling + 2 reservas concurrentes) |
 | **F2 · Agenda + Portal + Web pública** | `DoctorSchedule`, `BookAppointmentAction` con GIST, portal Inertia/Vue, web institucional con SEO local | BR-10–17 | — | **Sí** (zona roja) | BR-11 (concurrencia) pasa y una cita reservada en el portal aparece en recepción |
 | 💰 **Hito 2 (30 %)** | Demo: Pacientes + Sala de espera + Citas | | | | |
 | **F3 · Clínica** | Consulta, vacunas con cálculo de refuerzo, adjuntos, récipe en PDF, peluquería | BR-24–30 | DEC-01 | No | Un médico atiende de punta a punta y entrega el récipe |

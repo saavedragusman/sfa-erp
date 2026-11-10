@@ -32,6 +32,26 @@ final class AuditLogger
     }
 
     /**
+     * Same as record() for a singleton that is not an Eloquent model (for example a settings group).
+     * Its `entity_id` is always 1.
+     *
+     * @param  array<string, mixed>|null  $before
+     * @param  array<string, mixed>|null  $after
+     */
+    public function recordSingleton(?User $actor, string $action, string $entityType, ?array $before, ?array $after): AuditLog
+    {
+        return AuditLog::create([
+            'actor_id' => $actor?->getKey(),
+            'action' => $action,
+            'entity_type' => $entityType,
+            'entity_id' => 1,
+            'ip' => request()->ip(),
+            'before' => $before === null ? null : $this->redact($before, new AuditLog),
+            'after' => $after === null ? null : $this->redact($after, new AuditLog),
+        ]);
+    }
+
+    /**
      * Keys that are never stored, compared case-insensitively and by exact name.
      * `*_hash` is the only suffix rule; the audited model's `$hidden` attributes are added on top.
      */
