@@ -1,6 +1,6 @@
 # 002 · Permisos financieros y tasa de cambio (BR-02, BR-05)
 
-Rama: `feat/002-finance-and-rates` (apilada sobre `chore/f0-foundations`) · Zona roja: permisos y dinero/tasas (4R en el cierre de cada fase) · Estado: **puerta aprobada 2026-11-09 (DEC-12 = A, DEC-13 = A); en ejecución**
+Rama: `feat/002-finance-and-rates` (apilada sobre `chore/f0-foundations`) · Zona roja: permisos y dinero/tasas (4R en el cierre de cada fase) · Estado: **cerrada el 2026-11-09 (fases 1 a 3 y cierre de F0); falta solo el push y el merge, que decide el humano**
 
 ## 1. Spec
 Pedido del usuario, literal:
@@ -68,25 +68,35 @@ Asunción técnica mía, sin decisión de negocio: en F0, BR-02 entrega catálog
 
 ## 5. Tareas
 **Fase 1 · Permisos (BR-02)**
-- [ ] 1.1 RED: `BR-02 seeds finance permissions only to admin and manager` y `BR-02 grants no finance permission to reception, doctor or owner`. Test de comportamiento previo: los permisos de BR-01 siguen igual.
-- [ ] 1.2 Casos de `Permission` y mapa del seeder.
+- [x] 1.1 RED: `BR-02 seeds finance permissions only to admin and manager` y `BR-02 grants no finance permission to reception, doctor or owner`. Test de comportamiento previo: los permisos de BR-01 siguen igual.
+- [x] 1.2 Casos de `Permission` y mapa del seeder.
 
 **Fase 2 · Tabla (BR-05)** (zona roja: dinero)
-- [ ] 2.1 RED: `BR-05 rejects a second rate for the same date`, `BR-05 rejects a zero or negative rate`, `BR-05 rejects an unknown source`.
-- [ ] 2.2 Migración, `ExchangeRateSource` y `ExchangeRate`.
+- [x] 2.1 RED: `BR-05 rejects a second rate for the same date`, `BR-05 rejects a zero or negative rate`, `BR-05 rejects an unknown source`.
+- [x] 2.2 Migración, `ExchangeRateSource` y `ExchangeRate`.
 
 **Fase 3 · Action (BR-05, BR-57)** (zona roja; depende de 1.x y 2.x)
-- [ ] 3.1 RED:
+- [x] 3.1 RED:
   - `BR-05 forbids loading a rate without exchange_rates.manage`.
   - `BR-05 lets manager load a rate` (según DEC-12).
   - `BR-05 creates then edits the rate of a date and audits actor, ip and before/after`.
   - `BR-05 rejects a non-positive rate or more than 8 decimals`.
   - `BR-05 maps a concurrent duplicate date to DuplicateExchangeRateException`.
-- [ ] 3.2 `ExchangeRateData`, `ExchangeRatePolicy`, `DuplicateExchangeRateException` y `SetExchangeRateAction`.
+- [x] 3.2 `ExchangeRateData`, `ExchangeRatePolicy`, `DuplicateExchangeRateException` y `SetExchangeRateAction`.
 
 **Cierre de F0**
-- [ ] 4.1 `docs/ROADMAP.md`: F0 = BR-01, 02, 05, 56, 57 y F1 suma BR-03 y BR-04. Se registran DEC-12 y DEC-13 en `BUSINESS_RULES.md`.
-- [ ] 4.2 Checklist de cierre de §4.4 para F0, y confirmación humana (push y merge).
+- [x] 4.1 `docs/ROADMAP.md`: F0 = BR-01, 02, 05, 56, 57 y F1 suma BR-03 y BR-04. Se registran DEC-12 y DEC-13 en `BUSINESS_RULES.md`.
+- [ ] 4.2 Confirmación humana de F0 (push y merge de las tres ramas apiladas).
 
 ## 6. Evidencia
-(vacía hasta ejecutar)
+| Fase | Commit | Pruebas | Revisión (`assess`) |
+|---|---|---|---|
+| 1 · BR-02 | `cdb76b6` | `FinancePermissionsTest` (4); los tests exactos de BR-01 pasan a derivar del catálogo | medium, sin 4R |
+| 2 · BR-05 tabla | `067ffcf` | `ExchangeRateTableTest` (7), con SQLSTATE `23505` y `23514` | medium, sin 4R |
+| 3 · BR-05 Action | `72239fe` | `SetExchangeRateActionTest` (16): permisos, auditoría, rollback, validación, duplicado concurrente | medium, sin 4R |
+
+- Suite 154/154, Larastan nivel 8 y Pint en verde.
+- El rango completo (`bbff58f..72239fe`, 475 líneas) también dio medium, `under_budget`.
+- Corrección de mi evidencia: en la fase 2 los primeros tests pasaban en RED porque `toThrow(QueryException)` se cumple también cuando la tabla no existe; se reescribieron con el SQLSTATE exacto antes de implementar.
+- Pendiente por DEC-13: `ExchangeRateLockedException` y su test RED, en F4.
+- Pendiente por la asunción de §3: las pruebas de denegación de BR-02 llegan con las Actions de egresos (F4) y nómina (F7).
