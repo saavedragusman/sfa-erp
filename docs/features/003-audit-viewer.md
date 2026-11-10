@@ -1,6 +1,6 @@
 # 003 · Visor de auditoría (BR-60, nueva)
 
-Rama: `feat/003-audit-viewer` (apilada sobre `feat/002-finance-and-rates`) · Zona roja: permisos y auditoría (4R en el cierre de fase) · Estado: **cerrada el 2026-11-09 (fases 1 a 3); falta solo el push y el merge, que decide el humano**
+Rama: `feat/003-audit-viewer` (apilada sobre `feat/002-finance-and-rates`) · Zona roja: permisos y auditoría (4R en el cierre de fase) · Estado: **cerrada el 2026-11-09 (fases 1 a 3), parte de F0 (ROADMAP actualizado); falta solo el push y el merge, que decide el humano**
 
 ## 1. Spec
 Pedido del usuario, literal:
